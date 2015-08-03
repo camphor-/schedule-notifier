@@ -46,8 +46,8 @@ def generate_message(events):
         event = events[0]
         start = event["start"].time().strftime("%H:%M")
         end = event["end"].time().strftime("%H:%M")
-        return "本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。".format(
-            start, end)
+        return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
+みなさんのお越しをお待ちしています!!""".format(start, end)
 
 
 if __name__ == "__main__":
