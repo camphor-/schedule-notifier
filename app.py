@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from datetime import date
-import json
 
 from channels.backends.twitter import TwitterChannel
 import dateutil.parser
@@ -53,4 +52,3 @@ def generate_message(events):
 
 if __name__ == "__main__":
     main()
-
