@@ -5,8 +5,8 @@
 
 ## Usage
 * `pip install -U .`
-* Copy `conf.example.py` to `conf.py`
-* Edit `conf.py` (You can obtain Twitter API tokens from https://apps.twitter.com)
+* Copy `config.example.json` to `config.json`
+* Edit `config.json` (You can obtain Twitter API tokens from https://apps.twitter.com)
 * Run `schedule-notifier`
 
 ## License
