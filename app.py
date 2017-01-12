@@ -1,21 +1,28 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 from datetime import date
 
 from channels.backends.twitter import TwitterChannel
+import click
 import dateutil.parser
 import requests
 
 from conf import config
 
 
-def main():
+@click.command(help="CAMPHOR- Schedule Notifier")
+@click.option("--dry-run", "-n", default=False, is_flag=True,
+              help="Write messages to stdout.")
+def main(dry_run):
     events = download_events(config["url"])
     if events is None:
         return
     events = get_todays_events(events)
     events = get_open_events(events)
     message = generate_message(events)
+    if dry_run:
+        print(message)
+        return
     channel = TwitterChannel(**config["twitter"])
     channel.send(message)
 
