@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, unicode_literals
 from datetime import date
+import json
 
 from channels.backends.twitter import TwitterChannel
 import click
 import dateutil.parser
 import requests
 
-from conf import config
-
 
 @click.command(help="CAMPHOR- Schedule Notifier")
+@click.option("--config", type=click.Path(exists=True), default="config.json")
 @click.option("--dry-run", "-n", default=False, is_flag=True,
               help="Write messages to stdout.")
-def main(dry_run):
+def main(config, dry_run):
+    with open(config) as f:
+        config = json.load(f)
     events = download_events(config["url"])
     if events is None:
         return
