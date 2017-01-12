@@ -1,14 +1,13 @@
 # schedule-notifier
 
 ## Requirements
-* Python 2.7+ or 3.2+
-* `requirements.txt`
+* Python 2.7+ or 3.3+
 
 ## Usage
-* Install `requirements.txt`
+* `pip install -U .`
 * Copy `conf.example.py` to `conf.py`
 * Edit `conf.py` (You can obtain Twitter API tokens from https://apps.twitter.com)
-* Run `app.py`
+* Run `schedule-notifier`
 
 ## License
 MIT License. See [LICENSE](LICENSE).
