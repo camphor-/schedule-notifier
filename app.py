@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 import json
 
 from channels.backends.twitter import TwitterChannel
@@ -37,8 +37,10 @@ def download_events(url):
         return events
 
 
-def get_todays_events(events):
-    today = date.today()
+def get_todays_events(events, now=None):
+    if now is None:
+        now = datetime.now()
+    today = now.date()
     return filter(lambda e: e["start"].date() == today, events)
 
 
