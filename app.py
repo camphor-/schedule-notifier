@@ -49,6 +49,7 @@ def get_open_events(events):
 
 
 def generate_message(events):
+    events = list(events)
     if len(events) == 0:
         return "本日の CAMPHOR- HOUSE は閉館です。"
     else:
