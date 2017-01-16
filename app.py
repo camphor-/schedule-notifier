@@ -4,6 +4,7 @@ import json
 from channels.backends.twitter import TwitterChannel
 import click
 import dateutil.parser
+import pytz
 import requests
 
 
@@ -11,13 +12,19 @@ import requests
 @click.option("--config", type=click.Path(exists=True), default="config.json")
 @click.option("--dry-run", "-n", default=False, is_flag=True,
               help="Write messages to stdout.")
-def main(config, dry_run):
+@click.option("--timezone", default="Asia/Tokyo",
+              help="Time zone used to show time. (default: Asia/Tokyo)")
+def main(config, dry_run, timezone):
+    tz = pytz.timezone(timezone)
+    now = datetime.now(tz=tz)
+
     with open(config) as f:
         config = json.load(f)
-    events = download_events(config["url"])
+
+    events = download_events(config["url"], tz)
     if events is None:
         return
-    events = get_todays_events(events)
+    events = get_todays_events(events, now)
     events = get_open_events(events)
     message = generate_message(events)
     if dry_run:
@@ -27,21 +34,19 @@ def main(config, dry_run):
     channel.send(message)
 
 
-def download_events(url):
+def download_events(url, tz):
     response = requests.get(url)
-    if response.status_code == requests.codes.ok:
-        events = response.json()
-        for event in events:
-            event["start"] = dateutil.parser.parse(event["start"])
-            event["end"] = dateutil.parser.parse(event["end"])
-        return events
+    if response.status_code != requests.codes.ok:
+        return None
+    events = response.json()
+    for event in events:
+        event["start"] = dateutil.parser.parse(event["start"]).astimezone(tz)
+        event["end"] = dateutil.parser.parse(event["end"]).astimezone(tz)
+    return events
 
 
-def get_todays_events(events, now=None):
-    if now is None:
-        now = datetime.now()
-    today = now.date()
-    return filter(lambda e: e["start"].date() == today, events)
+def get_todays_events(events, now):
+    return filter(lambda e: e["start"].date() == now.date(), events)
 
 
 def get_open_events(events):
