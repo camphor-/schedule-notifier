@@ -20,7 +20,8 @@ setup(
     install_requires=[
         'click>=6.0,<7.0',
         'django-channels>=0.4.0,<0.5.0',
-        'python-dateutil>=2.6.0,<3.0'
+        'python-dateutil>=2.6.0,<3.0',
+        'pytz>=2016.10',
     ],
     entry_points={
         'console_scripts': [
