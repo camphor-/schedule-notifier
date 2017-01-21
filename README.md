@@ -5,12 +5,14 @@
 * Python 3.3+
 
 ## Usage
-### Common
-* Copy `config.example.json` to `config.json`
-* Edit `config.json` (You can obtain Twitter API tokens from https://apps.twitter.com)
+You must set credential for Twitter:
+* By command line options: `--api-key`, `--api-secret`, `--access-token`,
+  and `--access-token-secret`
+* Or, by environment variables: `CSN_API_KEY`, `CSN_API_SECRET`,
+  `CSN_ACCESS_TOKEN`, and `CSN_ACCESS_TOKEN_SECRET`
 
 ### A: Docker
-* `docker run -it --rm -v $(pwd)/config.json:/app/config.json:ro camphor/schedule-notifier`
+* `docker run -it --rm camphor/schedule-notifier`
 
 ### B: pip
 * `pip install -U .`

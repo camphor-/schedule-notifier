@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 
 from channels.backends.twitter import TwitterChannel
 import click
@@ -9,19 +8,27 @@ import requests
 
 
 @click.command(help="CAMPHOR- Schedule Notifier")
-@click.option("--config", type=click.Path(exists=True), default="config.json")
+@click.option("--url", default="https://cal.camph.net/public/schedule.json",
+              envvar="CSN_URL", help="URL of a schedule file.")
+@click.option("--api-key", type=click.STRING,
+              envvar="CSN_API_KEY", help="Twitter API Key.")
+@click.option("--api-secret", type=click.STRING,
+              envvar="CSN_API_SECRET", help="Twitter API Secret.")
+@click.option("--access-token", type=click.STRING,
+              envvar="CSN_ACCESS_TOKEN", help="Twitter Access Token.")
+@click.option("--access-token-secret", type=click.STRING,
+              envvar="CSN_ACCESS_TOKEN_SECRET",
+              help="Twitter Access Token Secret.")
 @click.option("--dry-run", "-n", default=False, is_flag=True,
               help="Write messages to stdout.")
 @click.option("--timezone", default="Asia/Tokyo",
               help="Time zone used to show time. (default: Asia/Tokyo)")
-def main(config, dry_run, timezone):
+def main(url, api_key, api_secret, access_token, access_token_secret, dry_run,
+         timezone):
     tz = pytz.timezone(timezone)
     now = datetime.now(tz=tz)
 
-    with open(config) as f:
-        config = json.load(f)
-
-    events = download_events(config["url"], tz)
+    events = download_events(url, tz)
     if events is None:
         return
     events = get_todays_events(events, now)
@@ -30,7 +37,9 @@ def main(config, dry_run, timezone):
     if dry_run:
         print(message)
         return
-    channel = TwitterChannel(**config["twitter"])
+    channel = TwitterChannel(api_key=api_key, api_secret=api_secret,
+                             access_token=access_token,
+                             access_token_secret=access_token_secret)
     channel.send(message)
 
 
