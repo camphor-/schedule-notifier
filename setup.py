@@ -24,6 +24,12 @@ setup(
         'python-dateutil>=2.6.0,<3.0',
         'pytz>=2016.10',
     ],
+    extras_require={
+        "test": [
+            "flake8>=3.0.0,<4.0.0",
+            "tox>=2.5.0,<3.0.0",
+        ],
+    },
     entry_points={
         'console_scripts': [
             'schedule-notifier=app:main',
