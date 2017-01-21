@@ -17,5 +17,9 @@
 
 For more information, run `schedule-notifier --help`
 
+## Test
+* Install: `pip install -U -e '.[test]'`
+* Run tests: `tox`
+
 ## License
 MIT License. See [LICENSE](LICENSE).
