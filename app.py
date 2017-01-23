@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, Iterable, List, Optional
 
 from channels.backends.twitter import TwitterChannel
 import click
@@ -23,15 +24,15 @@ import requests
               help="Write messages to stdout.")
 @click.option("--timezone", default="Asia/Tokyo",
               help="Time zone used to show time. (default: Asia/Tokyo)")
-def main(url, api_key, api_secret, access_token, access_token_secret, dry_run,
-         timezone):
+def main(url: str, api_key: str, api_secret: str, access_token: str,
+         access_token_secret: str, dry_run: bool, timezone: str):
     tz = pytz.timezone(timezone)
     now = datetime.now(tz=tz)
 
-    events = download_events(url, tz)
-    if events is None:
+    _events = download_events(url, tz)
+    if _events is None:
         return
-    events = get_todays_events(events, now)
+    events = get_todays_events(_events, now)
     events = get_open_events(events)
     message = generate_message(events)
     if dry_run:
@@ -43,7 +44,7 @@ def main(url, api_key, api_secret, access_token, access_token_secret, dry_run,
     channel.send(message)
 
 
-def download_events(url, tz):
+def download_events(url: str, tz) -> Optional[List[Any]]:
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
         return None
@@ -54,15 +55,15 @@ def download_events(url, tz):
     return events
 
 
-def get_todays_events(events, now):
+def get_todays_events(events: Iterable[Any], now: datetime) -> Iterable[Any]:
     return filter(lambda e: e["start"].date() == now.date(), events)
 
 
-def get_open_events(events):
+def get_open_events(events: Iterable[Any]) -> Iterable[Any]:
     return filter(lambda e: e["title"] == "Open", events)
 
 
-def generate_message(events):
+def generate_message(events: Iterable[Any]):
     events = list(events)
     if len(events) == 0:
         return "本日の CAMPHOR- HOUSE は閉館です。"

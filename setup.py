@@ -12,8 +12,6 @@ setup(
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
@@ -27,6 +25,7 @@ setup(
     extras_require={
         "test": [
             "flake8>=3.0.0,<4.0.0",
+            "mypy-lang>=0.4.6,<0.5.0",
             "tox>=2.5.0,<3.0.0",
         ],
     },
