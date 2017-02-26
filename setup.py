@@ -25,7 +25,7 @@ setup(
     extras_require={
         "test": [
             "flake8>=3.0.0,<4.0.0",
-            "mypy-lang>=0.4.6,<0.5.0",
+            "mypy>=0.471,<1.0",
             "tox>=2.5.0,<3.0.0",
         ],
     },
