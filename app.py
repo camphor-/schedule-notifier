@@ -33,8 +33,8 @@ class Event:
         if self.title.lower() == "open":
             start = self.start.astimezone(tz).time().strftime("%H:%M")
             end = self.end.astimezone(tz).time().strftime("%H:%M")
-            return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
-みなさんのお越しをお待ちしています!!""".format(start, end)
+            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+みなさんのお越しをお待ちしています!!"""
         else:
             return None
 
@@ -66,7 +66,7 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
     messages = generate_messages(events, now, tz)
     if dry_run:
         for i, message in enumerate(messages):
-            print("#{}\n{}".format(i + 1, message))
+            print(f"#{i + 1}\n{message}")
         return
     channel = TwitterChannel(api_key=api_key, api_secret=api_secret,
                              access_token=access_token,
