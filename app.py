@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import methodcaller
 from typing import Dict, Iterable, List, Optional
 
 from channels.backends.twitter import TwitterChannel
@@ -26,6 +27,16 @@ class Event:
         start = dateutil.parser.parse(data["start"])
         end = dateutil.parser.parse(data["end"])
         return cls(start=start, end=end, title=data["title"], url=data["url"])
+
+    def generate_message(self, tz) -> Optional[str]:
+        # TODO: Support other kinds of events
+        if self.title.lower() == "open":
+            start = self.start.astimezone(tz).time().strftime("%H:%M")
+            end = self.end.astimezone(tz).time().strftime("%H:%M")
+            return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
+みなさんのお越しをお待ちしています!!""".format(start, end)
+        else:
+            return None
 
 
 @click.command(help="CAMPHOR- Schedule Notifier")
@@ -72,17 +83,11 @@ def download_events(url: str) -> Optional[List[Event]]:
 
 
 def generate_messages(events: Iterable[Event], now: datetime, tz) -> List[str]:
-    messages = []
     now = now.astimezone(tz)
     events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
                     events)
-    for event in events:
-        if event.title.lower() == "open":
-            start = event.start.astimezone(tz).time().strftime("%H:%M")
-            end = event.end.astimezone(tz).time().strftime("%H:%M")
-            messages.append("""本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
-みなさんのお越しをお待ちしています!!""".format(start, end))
-        # TODO: Support other kinds of events
+    messages = [m for m in map(methodcaller("generate_message", tz), events)
+                if m is not None]
 
     if len(messages) == 0:
         messages.append("本日の CAMPHOR- HOUSE は閉館です。")
