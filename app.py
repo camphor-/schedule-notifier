@@ -28,7 +28,10 @@ class Event:
         end = dateutil.parser.parse(data["end"])
         return cls(start=start, end=end, title=data["title"], url=data["url"])
 
-    def generate_message(self, tz) -> Optional[str]:
+    def generate_message(self, now: datetime) -> Optional[str]:
+        tz = now.tzinfo
+        if tz is None:
+            raise ValueError("'now' must be timezone aware datetime")
         # TODO: Support other kinds of events
         if self.title.lower() == "open":
             start = self.start.astimezone(tz).time().strftime("%H:%M")
@@ -57,13 +60,12 @@ class Event:
               help="Time zone used to show time. (default: Asia/Tokyo)")
 def main(url: str, api_key: str, api_secret: str, access_token: str,
          access_token_secret: str, dry_run: bool, timezone: str):
-    tz = pytz.timezone(timezone)
-    now = datetime.now(tz=tz)
+    now = datetime.now(tz=pytz.timezone(timezone))
 
     events = download_events(url)
     if events is None:
         return
-    messages = generate_messages(events, now, tz)
+    messages = generate_messages(events, now)
     if dry_run:
         for i, message in enumerate(messages):
             print("#{}\n{}".format(i + 1, message))
@@ -82,11 +84,14 @@ def download_events(url: str) -> Optional[List[Event]]:
     return [Event.from_json(e) for e in response.json()]
 
 
-def generate_messages(events: Iterable[Event], now: datetime, tz) -> List[str]:
+def generate_messages(events: Iterable[Event], now: datetime) -> List[str]:
+    tz = now.tzinfo
+    if tz is None:
+        raise ValueError("'now' must be timezone aware datetime")
     now = now.astimezone(tz)
     events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
                     events)
-    messages = [m for m in map(methodcaller("generate_message", tz), events)
+    messages = [m for m in map(methodcaller("generate_message", now), events)
                 if m is not None]
 
     if len(messages) == 0:
