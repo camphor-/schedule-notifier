@@ -42,6 +42,16 @@ class Event:
             return None
 
 
+def validate_datetime(ctx, param, value) -> Optional[datetime]:
+    if value is None:
+        return None
+    try:
+        dt = dateutil.parser.parse(value)
+    except ValueError:
+        ctx.fail("Failed to parse '{}'".format(value))
+    return dt  # WARNING: tzinfo might be None
+
+
 @click.command(help="CAMPHOR- Schedule Notifier")
 @click.option("--url", default="https://cal.camph.net/public/schedule.json",
               envvar="CSN_URL", help="URL of a schedule file.")
@@ -58,9 +68,16 @@ class Event:
               help="Write messages to stdout.")
 @click.option("--timezone", default="Asia/Tokyo",
               help="Time zone used to show time. (default: Asia/Tokyo)")
+@click.option("--now", callback=validate_datetime,
+              help="Specify current time for debugging. (example: 2017-01-01)")
 def main(url: str, api_key: str, api_secret: str, access_token: str,
-         access_token_secret: str, dry_run: bool, timezone: str):
-    now = datetime.now(tz=pytz.timezone(timezone))
+         access_token_secret: str, dry_run: bool, timezone: str,
+         now: datetime):
+    tz = pytz.timezone(timezone)
+    if now is None:
+        now = datetime.now(tz=tz)
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=tz)
 
     events = download_events(url)
     if events is None:
