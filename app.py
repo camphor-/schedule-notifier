@@ -1,11 +1,42 @@
 from datetime import datetime
-from typing import Any, Iterable, List, Optional
+from operator import methodcaller
+from typing import Dict, Iterable, List, Optional
 
 from channels.backends.twitter import TwitterChannel
 import click
 import dateutil.parser
 import pytz
 import requests
+
+
+class Event:
+    # flake8 does not support variable annotations...
+    # start: datetime
+    # end: datetime
+    # title: str
+    # url: Optional[str]
+
+    def __init__(self, *, start, end, title, url):
+        self.start = start
+        self.end = end
+        self.title = title
+        self.url = url
+
+    @classmethod
+    def from_json(cls, data: Dict[str, Optional[str]]) -> "Event":
+        start = dateutil.parser.parse(data["start"])
+        end = dateutil.parser.parse(data["end"])
+        return cls(start=start, end=end, title=data["title"], url=data["url"])
+
+    def generate_message(self, tz) -> Optional[str]:
+        # TODO: Support other kinds of events
+        if self.title.lower() == "open":
+            start = self.start.astimezone(tz).time().strftime("%H:%M")
+            end = self.end.astimezone(tz).time().strftime("%H:%M")
+            return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
+みなさんのお越しをお待ちしています!!""".format(start, end)
+        else:
+            return None
 
 
 @click.command(help="CAMPHOR- Schedule Notifier")
@@ -29,50 +60,39 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
     tz = pytz.timezone(timezone)
     now = datetime.now(tz=tz)
 
-    _events = download_events(url, tz)
-    if _events is None:
+    events = download_events(url)
+    if events is None:
         return
-    events = get_todays_events(_events, now)
-    events = get_open_events(events)
-    message = generate_message(events)
+    messages = generate_messages(events, now, tz)
     if dry_run:
-        print(message)
+        for i, message in enumerate(messages):
+            print("#{}\n{}".format(i + 1, message))
         return
     channel = TwitterChannel(api_key=api_key, api_secret=api_secret,
                              access_token=access_token,
                              access_token_secret=access_token_secret)
-    channel.send(message)
+    for message in messages:
+        channel.send(message)
 
 
-def download_events(url: str, tz) -> Optional[List[Any]]:
+def download_events(url: str) -> Optional[List[Event]]:
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
         return None
-    events = response.json()
-    for event in events:
-        event["start"] = dateutil.parser.parse(event["start"]).astimezone(tz)
-        event["end"] = dateutil.parser.parse(event["end"]).astimezone(tz)
-    return events
+    return [Event.from_json(e) for e in response.json()]
 
 
-def get_todays_events(events: Iterable[Any], now: datetime) -> Iterable[Any]:
-    return filter(lambda e: e["start"].date() == now.date(), events)
+def generate_messages(events: Iterable[Event], now: datetime, tz) -> List[str]:
+    now = now.astimezone(tz)
+    events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
+                    events)
+    messages = [m for m in map(methodcaller("generate_message", tz), events)
+                if m is not None]
 
+    if len(messages) == 0:
+        messages.append("本日の CAMPHOR- HOUSE は閉館です。")
 
-def get_open_events(events: Iterable[Any]) -> Iterable[Any]:
-    return filter(lambda e: e["title"] == "Open", events)
-
-
-def generate_message(events: Iterable[Any]):
-    events = list(events)
-    if len(events) == 0:
-        return "本日の CAMPHOR- HOUSE は閉館です。"
-    else:
-        event = events[0]
-        start = event["start"].time().strftime("%H:%M")
-        end = event["end"].time().strftime("%H:%M")
-        return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
-みなさんのお越しをお待ちしています!!""".format(start, end)
+    return messages
 
 
 if __name__ == "__main__":
