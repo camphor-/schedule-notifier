@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/camphor-/schedule-notifier.svg?branch=master)](https://travis-ci.org/camphor-/schedule-notifier)
 
 ## Requirements
-* Python 3.5+
+* Python 3.6+
 
 ## Usage
 You must set credential for Twitter:
