@@ -32,12 +32,17 @@ class Event:
         tz = now.tzinfo
         if tz is None:
             raise ValueError("'now' must be timezone aware datetime")
-        # TODO: Support other kinds of events
+        start = self.start.astimezone(tz).time().strftime("%H:%M")
+        end = self.end.astimezone(tz).time().strftime("%H:%M")
         if self.title.lower() == "open":
-            start = self.start.astimezone(tz).time().strftime("%H:%M")
-            end = self.end.astimezone(tz).time().strftime("%H:%M")
             return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
 みなさんのお越しをお待ちしています!!""".format(start, end)
+        elif self.title.strip() != "":
+            message = """「{}」を{}〜{}に開催します!
+みなさんのお越しをお待ちしています!!""".format(self.title, start, end)
+            if self.url is not None and self.url != "":
+                message += "\n{}".format(self.url)
+            return message
         else:
             return None
 
