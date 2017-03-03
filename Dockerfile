@@ -1,5 +1,4 @@
-FROM python:3.6-slim
-MAINTAINER Yusuke Miyazaki <miyazaki.dev@gmail.com>
+FROM python:3.6-alpine
 
 RUN mkdir -p /app/
 WORKDIR /app
