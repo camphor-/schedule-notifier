@@ -1,5 +1,6 @@
 # schedule-notifier
 [![Build Status](https://travis-ci.org/camphor-/schedule-notifier.svg?branch=master)](https://travis-ci.org/camphor-/schedule-notifier)
+[![Requirements Status](https://requires.io/github/camphor-/schedule-notifier/requirements.svg?branch=master)](https://requires.io/github/camphor-/schedule-notifier/requirements/?branch=master)
 
 ## Requirements
 * Python 3.5+
