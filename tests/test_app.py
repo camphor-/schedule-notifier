@@ -16,8 +16,8 @@ class TestEvent:
             "title": "Open"
         }
         e = app.Event.from_json(d)
-        assert e.start == datetime(2015, 11, 2, 17, 0, 0, tzinfo=tz)
-        assert e.end == datetime(2015, 11, 2, 20, 0, 0, tzinfo=tz)
+        assert e.start == tz.localize(datetime(2015, 11, 2, 17, 0, 0))
+        assert e.end == tz.localize(datetime(2015, 11, 2, 20, 0, 0))
         assert e.title == "Open"
         assert e.url == "https://example.com/"
 
@@ -28,8 +28,8 @@ class TestEvent:
             "title": "Open"
         }
         e = app.Event.from_json(d)
-        assert e.start == datetime(2015, 11, 2, 17, 0, 0, tzinfo=tz)
-        assert e.end == datetime(2015, 11, 2, 20, 0, 0, tzinfo=tz)
+        assert e.start == tz.localize(datetime(2015, 11, 2, 17, 0, 0))
+        assert e.end == tz.localize(datetime(2015, 11, 2, 20, 0, 0))
         assert e.title == "Open"
         assert e.url is None
 
