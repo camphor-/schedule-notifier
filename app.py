@@ -2,9 +2,9 @@ from datetime import datetime
 from operator import methodcaller
 from typing import Dict, Iterable, List, Optional
 
-from channels.backends.twitter import TwitterChannel
 import click
 import dateutil.parser
+from kawasemi import Kawasemi
 import pytz
 import requests
 
@@ -92,11 +92,21 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
         for i, message in enumerate(messages):
             print("#{}\n{}".format(i + 1, message))
         return
-    channel = TwitterChannel(api_key=api_key, api_secret=api_secret,
-                             access_token=access_token,
-                             access_token_secret=access_token_secret)
+
+    kawasemi = Kawasemi({
+        "CHANNELS": {
+            "twitter": {
+                "_backend": "kawasemi.backends.twitter.TwitterChannel",
+                "api_key": api_key,
+                "api_secret": api_secret,
+                "access_token": access_token,
+                "access_token_secret": access_token_secret,
+            }
+        }
+    })
+
     for message in messages:
-        channel.send(message)
+        kawasemi.send(message)
 
 
 def download_events(url: str) -> Optional[List[Event]]:
