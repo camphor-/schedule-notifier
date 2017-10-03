@@ -10,11 +10,10 @@ import requests
 
 
 class Event:
-    # flake8 does not support variable annotations...
-    # start: datetime
-    # end: datetime
-    # title: str
-    # url: Optional[str]
+    start: datetime
+    end: datetime
+    title: str
+    url: Optional[str]
 
     def __init__(self, *, start, end, title, url):
         self.start = start
@@ -35,13 +34,13 @@ class Event:
         start = self.start.astimezone(tz).time().strftime("%H:%M")
         end = self.end.astimezone(tz).time().strftime("%H:%M")
         if self.title.lower() == "open":
-            return """本日の CAMPHOR- HOUSE の開館時間は{}〜{}です。
-みなさんのお越しをお待ちしています!!""".format(start, end)
+            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+みなさんのお越しをお待ちしています!!"""
         elif self.title.strip() != "":
-            message = """「{}」を{}〜{}に開催します!
-みなさんのお越しをお待ちしています!!""".format(self.title, start, end)
+            message = f"""「{self.title}」を{start}〜{end}に開催します!
+みなさんのお越しをお待ちしています!!"""
             if self.url is not None and self.url != "":
-                message += "\n{}".format(self.url)
+                message += f"\n{self.url}"
             return message
         else:
             return None
@@ -53,7 +52,7 @@ def validate_datetime(ctx, param, value) -> Optional[datetime]:
     try:
         dt = dateutil.parser.parse(value)
     except ValueError:
-        ctx.fail("Failed to parse '{}'".format(value))
+        ctx.fail(f"Failed to parse '{value}'")
     return dt  # WARNING: tzinfo might be None
 
 
@@ -90,7 +89,7 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
     messages = generate_messages(events, now)
     if dry_run:
         for i, message in enumerate(messages):
-            print("#{}\n{}".format(i + 1, message))
+            print(f"#{i + 1}\n{message}")
         return
 
     kawasemi = Kawasemi({
