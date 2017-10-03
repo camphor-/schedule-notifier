@@ -3,7 +3,7 @@
 [![Requirements Status](https://requires.io/github/camphor-/schedule-notifier/requirements.svg?branch=master)](https://requires.io/github/camphor-/schedule-notifier/requirements/?branch=master)
 
 ## Requirements
-* Python 3.5+
+* Python 3.6+
 
 ## Usage
 You must set credential for Twitter:
