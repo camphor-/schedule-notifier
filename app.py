@@ -15,7 +15,8 @@ class Event:
     title: str
     url: Optional[str]
 
-    def __init__(self, *, start, end, title, url):
+    def __init__(self, *, start: datetime, end: datetime, title: str,
+                 url: Optional[str]) -> None:
         self.start = start
         self.end = end
         self.title = title
@@ -76,7 +77,7 @@ def validate_datetime(ctx, param, value) -> Optional[datetime]:
               help="Specify current time for debugging. (example: 2017-01-01)")
 def main(url: str, api_key: str, api_secret: str, access_token: str,
          access_token_secret: str, dry_run: bool, timezone: str,
-         now: datetime):
+         now: datetime) -> None:
     tz = pytz.timezone(timezone)
     if now is None:
         now = datetime.now(tz=tz)
