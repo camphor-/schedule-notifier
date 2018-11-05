@@ -36,7 +36,7 @@ class Event:
             title = data["title"]
         else:
             raise KeyError
-        return cls(start=start, end=end, title=data["title"], url=data["url"])
+        return cls(start=start, end=end, title=title, url=data["url"])
 
     def generate_message(self, now: datetime) -> Optional[str]:
         tz = now.tzinfo
