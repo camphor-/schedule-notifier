@@ -24,9 +24,19 @@ class Event:
 
     @classmethod
     def from_json(cls, data: Dict[str, Optional[str]]) -> "Event":
-        start = dateutil.parser.parse(data["start"])
-        end = dateutil.parser.parse(data["end"])
-        return cls(start=start, end=end, title=data["title"], url=data["url"])
+        if data["start"] is not None:
+            start = dateutil.parser.parse(data["start"])
+        else:
+            raise KeyError
+        if data["end"] is not None:
+            end = dateutil.parser.parse(data["end"])
+        else:
+            raise KeyError
+        if data["title"] is not None:
+            title = data["title"]
+        else:
+            raise KeyError
+        return cls(start=start, end=end, title=title, url=data["url"])
 
     def generate_message(self, now: datetime) -> Optional[str]:
         tz = now.tzinfo
@@ -92,21 +102,21 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
         for i, message in enumerate(messages):
             print(f"#{i + 1}\n{message}")
         return
-
-    kawasemi = Kawasemi({
-        "CHANNELS": {
-            "twitter": {
-                "_backend": "kawasemi.backends.twitter.TwitterChannel",
-                "api_key": api_key,
-                "api_secret": api_secret,
-                "access_token": access_token,
-                "access_token_secret": access_token_secret,
+    if len(messages) > 0:
+        kawasemi = Kawasemi({
+            "CHANNELS": {
+                "twitter": {
+                    "_backend": "kawasemi.backends.twitter.TwitterChannel",
+                    "api_key": api_key,
+                    "api_secret": api_secret,
+                    "access_token": access_token,
+                    "access_token_secret": access_token_secret,
+                }
             }
-        }
-    })
+        })
 
-    for message in messages:
-        kawasemi.send(message)
+        for message in messages:
+            kawasemi.send(message)
 
 
 def download_events(url: str) -> Optional[List[Event]]:
@@ -125,9 +135,6 @@ def generate_messages(events: Iterable[Event], now: datetime) -> List[str]:
                     events)
     messages = [m for m in map(methodcaller("generate_message", now), events)
                 if m is not None]
-
-    if len(messages) == 0:
-        messages.append("本日の CAMPHOR- HOUSE は閉館です。")
 
     return messages
 
