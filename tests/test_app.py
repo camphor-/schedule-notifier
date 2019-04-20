@@ -90,3 +90,69 @@ https://example.com/"""
             title="")
         message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
         assert message is None
+
+    def test_generate_week_message_with_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        message = app.generate_week_message([e0, e1], tz)
+        assert message == ["""今週の開館日です！
+04/01 17:00〜19:00
+04/03 17:00〜19:00
+
+みなさんのお越しをお待ちしています!!"""]
+
+    def test_generate_week_message_with_event(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 2, 17, tzinfo=tz),
+            end=datetime(2019, 4, 2, 19, tzinfo=tz),
+            url=None,
+            title="Python Event")
+        message = app.generate_week_message([e0], tz)
+        assert message == ["""今週のイベント情報です！
+Python Event 04/02 17:00〜19:00
+
+みなさんのお越しをお待ちしています!!"""]
+
+    def test_generate_week_message_with_nothing(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        message = app.generate_week_message([], tz)
+        assert message == []
+
+    def test_generate_week_message_with_event_and_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 2, 17, tzinfo=tz),
+            end=datetime(2019, 4, 2, 19, tzinfo=tz),
+            url=None,
+            title="Python Event")
+        e1 = app.Event(
+            start=datetime(2019, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e2 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+
+        message = app.generate_week_message([e0, e1, e2], tz)
+        assert message == ["""今週の開館日です！
+04/01 17:00〜19:00
+04/03 17:00〜19:00
+
+みなさんのお越しをお待ちしています!!""",
+                           """今週のイベント情報です！
+Python Event 04/02 17:00〜19:00
+
+みなさんのお越しをお待ちしています!!"""]
