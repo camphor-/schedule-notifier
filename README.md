@@ -21,9 +21,17 @@ You must set credential for Twitter:
 
 For more information, run `schedule-notifier --help`
 
+## Development
+Development environment can be created using [pipenv](https://github.com/pypa/pipenv)
+* `pipenv install`
+* `pipenv shell`
+* Run `schedule-notifier`
+
+If any dependencies are added, run `pipenv install -e .` to regenerate `Pipenv.lock`.
+
 ## Test
-* Install: `pip install -U -e '.[test]'`
-* Run tests: `tox`
+* Install: `pipenv install --dev'`
+* Run tests: `pipenv run tox`
 
 ## License
 MIT License. See [LICENSE](LICENSE).
