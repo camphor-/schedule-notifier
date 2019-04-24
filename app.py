@@ -85,6 +85,8 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
             start = event.start.astimezone(tz).time().strftime("%H:%M")
             end = event.end.astimezone(tz).time().strftime("%H:%M")
             other_message += f"{event.title} {date} ({day}) {start}〜{end}\n"
+            if event.url is not None:
+                other_message += f"{event.url}\n"
         other_message += "\nお申し込みの上ご参加ください。"
         other_message += "\nみなさんのお越しをお待ちしています!!"
         messages.append(other_message)

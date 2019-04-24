@@ -134,7 +134,7 @@ Python Event 04/02 (火) 17:00〜19:00
         e0 = app.Event(
             start=datetime(2019, 4, 2, 17, tzinfo=tz),
             end=datetime(2019, 4, 2, 19, tzinfo=tz),
-            url=None,
+            url='https://example.com/',
             title="Python Event")
         e1 = app.Event(
             start=datetime(2019, 4, 1, 17, tzinfo=tz),
@@ -155,6 +155,7 @@ Python Event 04/02 (火) 17:00〜19:00
 みなさんのお越しをお待ちしています!!""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
+https://example.com/
 
 お申し込みの上ご参加ください。
 みなさんのお越しをお待ちしています!!"""]
