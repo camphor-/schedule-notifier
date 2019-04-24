@@ -5,6 +5,7 @@ from typing import Dict, Iterable, List, Optional
 import click
 import dateutil.parser
 from kawasemi import Kawasemi
+import locale
 import pytz
 import requests
 
@@ -58,6 +59,7 @@ class Event:
 
 
 def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
+    locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
     open_events = list(filter(lambda e: e.title.lower() == "open", events))
     other_events = list(
         filter(lambda e: e.title.lower() != "open", events))
@@ -68,9 +70,10 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
         open_message = "今週の開館日です！\n"
         for open in open_events:
             date = open.start.astimezone(tz).date().strftime("%m/%d")
+            day = open.start.astimezone(tz).strftime("%a")
             start = open.start.astimezone(tz).time().strftime("%H:%M")
             end = open.end.astimezone(tz).time().strftime("%H:%M")
-            open_message += f"{date} {start}〜{end}\n"
+            open_message += f"{date} ({day}) {start}〜{end}\n"
         open_message += "\nみなさんのお越しをお待ちしています!!"
         messages.append(open_message)
 
@@ -78,9 +81,11 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
         other_message = "今週のイベント情報です！\n"
         for event in other_events:
             date = event.start.astimezone(tz).date().strftime("%m/%d")
+            day = event.start.astimezone(tz).strftime("%a")
             start = event.start.astimezone(tz).time().strftime("%H:%M")
             end = event.end.astimezone(tz).time().strftime("%H:%M")
-            other_message += f"{event.title} {date} {start}〜{end}\n"
+            other_message += f"{event.title} {date} ({day}) {start}〜{end}\n"
+        other_message += "\nお申し込みの上ご参加ください。"
         other_message += "\nみなさんのお越しをお待ちしています!!"
         messages.append(other_message)
 

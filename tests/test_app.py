@@ -105,8 +105,8 @@ https://example.com/"""
             title="Open")
         message = app.generate_week_message([e0, e1], tz)
         assert message == ["""今週の開館日です！
-04/01 17:00〜19:00
-04/03 17:00〜19:00
+04/01 (月) 17:00〜19:00
+04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!"""]
 
@@ -119,8 +119,9 @@ https://example.com/"""
             title="Python Event")
         message = app.generate_week_message([e0], tz)
         assert message == ["""今週のイベント情報です！
-Python Event 04/02 17:00〜19:00
+Python Event 04/02 (火) 17:00〜19:00
 
+お申し込みの上ご参加ください。
 みなさんのお越しをお待ちしています!!"""]
 
     def test_generate_week_message_with_nothing(self):
@@ -148,11 +149,12 @@ Python Event 04/02 17:00〜19:00
 
         message = app.generate_week_message([e0, e1, e2], tz)
         assert message == ["""今週の開館日です！
-04/01 17:00〜19:00
-04/03 17:00〜19:00
+04/01 (月) 17:00〜19:00
+04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!""",
                            """今週のイベント情報です！
-Python Event 04/02 17:00〜19:00
+Python Event 04/02 (火) 17:00〜19:00
 
+お申し込みの上ご参加ください。
 みなさんのお越しをお待ちしています!!"""]
