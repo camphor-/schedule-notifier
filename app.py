@@ -5,7 +5,6 @@ from typing import Dict, Iterable, List, Optional
 import click
 import dateutil.parser
 from kawasemi import Kawasemi
-import locale
 import pytz
 import requests
 
@@ -65,7 +64,6 @@ def get_japanese_weekday(day: int) -> str:
 
 
 def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
-    locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
     open_events = list(filter(lambda e: e.title.lower() == "open", events))
     other_events = list(
         filter(lambda e: e.title.lower() != "open", events))
