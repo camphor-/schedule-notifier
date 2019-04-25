@@ -9,6 +9,8 @@ import locale
 import pytz
 import requests
 
+WEEKDAY_NAMES = ['月', '火', '水', '木', '金', '土', '日']
+
 
 class Event:
     start: datetime
@@ -58,6 +60,10 @@ class Event:
             return None
 
 
+def get_japanese_weekday(day: int) -> str:
+    return WEEKDAY_NAMES[day]
+
+
 def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
     open_events = list(filter(lambda e: e.title.lower() == "open", events))
@@ -70,7 +76,7 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
         open_message = "今週の開館日です！\n"
         for open in open_events:
             date = open.start.astimezone(tz).date().strftime("%m/%d")
-            day = open.start.astimezone(tz).strftime("%a")
+            day = get_japanese_weekday(open.start.astimezone(tz).weekday())
             start = open.start.astimezone(tz).time().strftime("%H:%M")
             end = open.end.astimezone(tz).time().strftime("%H:%M")
             open_message += f"{date} ({day}) {start}〜{end}\n"
@@ -81,7 +87,7 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
         other_message = "今週のイベント情報です！\n"
         for event in other_events:
             date = event.start.astimezone(tz).date().strftime("%m/%d")
-            day = event.start.astimezone(tz).strftime("%a")
+            day = get_japanese_weekday(event.start.astimezone(tz).weekday())
             start = event.start.astimezone(tz).time().strftime("%H:%M")
             end = event.end.astimezone(tz).time().strftime("%H:%M")
             other_message += f"{event.title} {date} ({day}) {start}〜{end}\n"
