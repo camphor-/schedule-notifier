@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, tzinfo
 from operator import methodcaller
 from typing import Dict, Iterable, List, Optional
 
@@ -7,6 +7,8 @@ import dateutil.parser
 from kawasemi import Kawasemi
 import pytz
 import requests
+
+WEEKDAY_NAMES = ['月', '火', '水', '木', '金', '土', '日']
 
 
 class Event:
@@ -57,6 +59,45 @@ class Event:
             return None
 
 
+def get_japanese_weekday(day: int) -> str:
+    return WEEKDAY_NAMES[day]
+
+
+def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
+    open_events = list(filter(lambda e: e.title.lower() == "open", events))
+    other_events = list(
+        filter(lambda e: e.title.lower() != "open", events))
+
+    messages = []
+
+    if len(open_events) > 0:
+        open_message = "今週の開館日です！\n"
+        for open in open_events:
+            date = open.start.astimezone(tz).date().strftime("%m/%d")
+            day = get_japanese_weekday(open.start.astimezone(tz).weekday())
+            start = open.start.astimezone(tz).time().strftime("%H:%M")
+            end = open.end.astimezone(tz).time().strftime("%H:%M")
+            open_message += f"{date} ({day}) {start}〜{end}\n"
+        open_message += "\nみなさんのお越しをお待ちしています!!"
+        messages.append(open_message)
+
+    if len(other_events) > 0:
+        other_message = "今週のイベント情報です！\n"
+        for event in other_events:
+            date = event.start.astimezone(tz).date().strftime("%m/%d")
+            day = get_japanese_weekday(event.start.astimezone(tz).weekday())
+            start = event.start.astimezone(tz).time().strftime("%H:%M")
+            end = event.end.astimezone(tz).time().strftime("%H:%M")
+            other_message += f"{event.title} {date} ({day}) {start}〜{end}\n"
+            if event.url is not None:
+                other_message += f"{event.url}\n"
+        other_message += "\nお申し込みの上ご参加ください。"
+        other_message += "\nみなさんのお越しをお待ちしています!!"
+        messages.append(other_message)
+
+    return messages
+
+
 def validate_datetime(ctx, param, value) -> Optional[datetime]:
     if value is None:
         return None
@@ -85,9 +126,11 @@ def validate_datetime(ctx, param, value) -> Optional[datetime]:
               help="Time zone used to show time. (default: Asia/Tokyo)")
 @click.option("--now", callback=validate_datetime,
               help="Specify current time for debugging. (example: 2017-01-01)")
+@click.option("--week", default=False, is_flag=True,
+              envvar="CSN_WEEK", help="Notify weekly schedule.")
 def main(url: str, api_key: str, api_secret: str, access_token: str,
          access_token_secret: str, dry_run: bool, timezone: str,
-         now: datetime) -> None:
+         now: datetime, week: bool) -> None:
     tz = pytz.timezone(timezone)
     if now is None:
         now = datetime.now(tz=tz)
@@ -97,7 +140,7 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
     events = download_events(url)
     if events is None:
         return
-    messages = generate_messages(events, now)
+    messages = generate_messages(events, now, week)
     if dry_run:
         for i, message in enumerate(messages):
             print(f"#{i + 1}\n{message}")
@@ -126,15 +169,25 @@ def download_events(url: str) -> Optional[List[Event]]:
     return [Event.from_json(e) for e in response.json()]
 
 
-def generate_messages(events: Iterable[Event], now: datetime) -> List[str]:
+def generate_messages(events: Iterable[Event], now: datetime,
+                      week: bool) -> List[str]:
     tz = now.tzinfo
     if tz is None:
         raise ValueError("'now' must be timezone aware datetime")
     now = now.astimezone(tz)
-    events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
-                    events)
-    messages = [m for m in map(methodcaller("generate_message", now), events)
-                if m is not None]
+
+    if week:
+        delta = timedelta(days=7)
+        events = filter(lambda e: e.start.astimezone(tz).date() >= now.date()
+                        and e.start.astimezone(tz).date() < now.date() + delta,
+                        events)
+        messages = generate_week_message(list(events), tz)
+    else:
+        events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
+                        events)
+        messages = [m for m in map(methodcaller("generate_message", now),
+                                   events)
+                    if m is not None]
 
     return messages
 
