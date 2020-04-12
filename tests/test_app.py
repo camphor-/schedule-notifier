@@ -136,7 +136,7 @@ https://example.com/"""
 04/01 (水) 17:00〜19:00
 04/03 (金) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!"""]
+詳しくはCAMPHOR-のSlackをご覧ください!!"""]
 
     def test_generate_week_message_with_event(self):
         tz = pytz.timezone("Asia/Tokyo")
@@ -220,7 +220,7 @@ https://example.com/
                            """今週のオンライン開館日です！
 04/04 (木) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!""",
+詳しくはCAMPHOR-のSlackをご覧ください!!""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
 https://example.com/
