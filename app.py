@@ -124,7 +124,7 @@ def generate_online_open_event_message(
     message = "今週のオンライン開館日です！\n"
     for online in online_open_events:
         message += online.get_day_and_time(tz)
-    message += "\nみなさんのお越しをお待ちしています!!"
+    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!"
     return message
 
 
