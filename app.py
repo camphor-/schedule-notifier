@@ -46,9 +46,13 @@ class Event:
             raise ValueError("'now' must be timezone aware datetime")
         start = self.start.astimezone(tz).time().strftime("%H:%M")
         end = self.end.astimezone(tz).time().strftime("%H:%M")
+
         if self.title.lower() == "open":
             return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
 みなさんのお越しをお待ちしています!!"""
+        elif self.title.lower() == "online open":
+            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+詳しくはCAMPHOR-のSlackをご覧ください!!"""
         elif self.title.strip() != "":
             message = f"""「{self.title}」を{start}〜{end}に開催します!
 みなさんのお越しをお待ちしています!!"""
@@ -58,6 +62,16 @@ class Event:
         else:
             return None
 
+    def get_day_and_time(self, tz: tzinfo) -> str:
+        date = self.start.astimezone(tz).date().strftime("%m/%d")
+        day = get_japanese_weekday(self.start.astimezone(tz).weekday())
+        start = self.start.astimezone(tz).time().strftime("%H:%M")
+        end = self.end.astimezone(tz).time().strftime("%H:%M")
+        return f"{date} ({day}) {start}〜{end}\n"
+
+    def get_day_and_time_with_title(self, tz: tzinfo) -> str:
+        return f"{self.title} {self.get_day_and_time(tz)}"
+
 
 def get_japanese_weekday(day: int) -> str:
     return WEEKDAY_NAMES[day]
@@ -65,37 +79,66 @@ def get_japanese_weekday(day: int) -> str:
 
 def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     open_events = list(filter(lambda e: e.title.lower() == "open", events))
+    online_open_events = list(
+        filter(
+            lambda e: e.title.lower() == "online open",
+            events))
     other_events = list(
-        filter(lambda e: e.title.lower() != "open", events))
+        filter(lambda e: e.title.lower() != "open" and
+               e.title.lower() != "online open", events))
 
     messages = []
 
-    if len(open_events) > 0:
-        open_message = "今週の開館日です！\n"
-        for open in open_events:
-            date = open.start.astimezone(tz).date().strftime("%m/%d")
-            day = get_japanese_weekday(open.start.astimezone(tz).weekday())
-            start = open.start.astimezone(tz).time().strftime("%H:%M")
-            end = open.end.astimezone(tz).time().strftime("%H:%M")
-            open_message += f"{date} ({day}) {start}〜{end}\n"
-        open_message += "\nみなさんのお越しをお待ちしています!!"
+    open_message = generate_open_event_message(open_events, tz)
+    if open_message != "":
         messages.append(open_message)
 
-    if len(other_events) > 0:
-        other_message = "今週のイベント情報です！\n"
-        for event in other_events:
-            date = event.start.astimezone(tz).date().strftime("%m/%d")
-            day = get_japanese_weekday(event.start.astimezone(tz).weekday())
-            start = event.start.astimezone(tz).time().strftime("%H:%M")
-            end = event.end.astimezone(tz).time().strftime("%H:%M")
-            other_message += f"{event.title} {date} ({day}) {start}〜{end}\n"
-            if event.url is not None:
-                other_message += f"{event.url}\n"
-        other_message += "\nお申し込みの上ご参加ください。"
-        other_message += "\nみなさんのお越しをお待ちしています!!"
+    online_open_message = generate_online_open_event_message(
+        online_open_events, tz)
+    if online_open_message != "":
+        messages.append(online_open_message)
+
+    other_message = generate_other_event_message(other_events, tz)
+    if other_message != "":
         messages.append(other_message)
 
     return messages
+
+
+def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
+    if len(open_events) == 0:
+        return ""
+
+    message = "今週の開館日です！\n"
+    for open in open_events:
+        message += open.get_day_and_time(tz)
+    message += "\nみなさんのお越しをお待ちしています!!"
+    return message
+
+
+def generate_online_open_event_message(
+        online_open_events: List[Event], tz: tzinfo) -> str:
+    if len(online_open_events) == 0:
+        return ""
+
+    message = "今週のオンライン開館日です！\n"
+    for online in online_open_events:
+        message += online.get_day_and_time(tz)
+    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!"
+    return message
+
+
+def generate_other_event_message(other_events: List[Event], tz: tzinfo) -> str:
+    if len(other_events) == 0:
+        return ""
+    message = "今週のイベント情報です！\n"
+    for event in other_events:
+        message += event.get_day_and_time_with_title(tz)
+        if event.url is not None:
+            message += f"{event.url}\n"
+    message += "\nお申し込みの上ご参加ください。"
+    message += "\nみなさんのお越しをお待ちしています!!"
+    return message
 
 
 def validate_datetime(ctx, param, value) -> Optional[datetime]:

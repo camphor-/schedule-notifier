@@ -63,6 +63,15 @@ class TestEvent:
 みなさんのお越しをお待ちしています!!"""
 
         e = app.Event(
+            start=datetime(2020, 4, 12, 15, tzinfo=tz),
+            end=datetime(2020, 4, 12, 19, tzinfo=tz),
+            url=None,
+            title="Online Open")
+        message = e.generate_message(datetime(2020, 4, 12, 10, tzinfo=tz))
+        assert message == """本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
+詳しくはCAMPHOR-のSlackをご覧ください!!"""
+
+        e = app.Event(
             start=datetime(2017, 3, 3, 17, tzinfo=tz),
             end=datetime(2017, 3, 3, 19, tzinfo=tz),
             url="https://example.com/",
@@ -110,6 +119,25 @@ https://example.com/"""
 
 みなさんのお越しをお待ちしています!!"""]
 
+    def test_generate_week_message_with_online_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2020, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Online Open")
+        e1 = app.Event(
+            start=datetime(2020, 4, 3, 17, tzinfo=tz),
+            end=datetime(2020, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Online Open")
+        message = app.generate_week_message([e0, e1], tz)
+        assert message == ["""今週のオンライン開館日です！
+04/01 (水) 17:00〜19:00
+04/03 (金) 17:00〜19:00
+
+詳しくはCAMPHOR-のSlackをご覧ください!!"""]
+
     def test_generate_week_message_with_event(self):
         tz = pytz.timezone("Asia/Tokyo")
         e0 = app.Event(
@@ -153,6 +181,46 @@ Python Event 04/02 (火) 17:00〜19:00
 04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!""",
+                           """今週のイベント情報です！
+Python Event 04/02 (火) 17:00〜19:00
+https://example.com/
+
+お申し込みの上ご参加ください。
+みなさんのお越しをお待ちしています!!"""]
+
+    def test_generate_week_message_with_event_open_and_online_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 2, 17, tzinfo=tz),
+            end=datetime(2019, 4, 2, 19, tzinfo=tz),
+            url='https://example.com/',
+            title="Python Event")
+        e1 = app.Event(
+            start=datetime(2019, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e2 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e3 = app.Event(
+            start=datetime(2019, 4, 4, 17, tzinfo=tz),
+            end=datetime(2019, 4, 4, 19, tzinfo=tz),
+            url=None,
+            title="Online Open")
+
+        message = app.generate_week_message([e0, e1, e2, e3], tz)
+        assert message == ["""今週の開館日です！
+04/01 (月) 17:00〜19:00
+04/03 (水) 17:00〜19:00
+
+みなさんのお越しをお待ちしています!!""",
+                           """今週のオンライン開館日です！
+04/04 (木) 17:00〜19:00
+
+詳しくはCAMPHOR-のSlackをご覧ください!!""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
 https://example.com/
