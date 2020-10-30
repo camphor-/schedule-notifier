@@ -63,6 +63,8 @@ class TestEvent:
         message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
         assert message == f"""本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
 みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}"""
 
         e = app.Event(
@@ -73,6 +75,8 @@ class TestEvent:
         message = e.generate_message(datetime(2020, 4, 12, 10, tzinfo=tz))
         assert message == f"""本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
 詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}"""
 
         e = app.Event(
@@ -122,6 +126,8 @@ https://example.com/"""
 04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}"""]
 
     def test_generate_week_message_with_online_open(self):
@@ -142,6 +148,8 @@ https://example.com/"""
 04/03 (金) 17:00〜19:00
 
 詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}"""]
 
     def test_generate_week_message_with_event(self):
@@ -187,6 +195,8 @@ Python Event 04/02 (火) 17:00〜19:00
 04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
@@ -224,11 +234,15 @@ https://example.com/
 04/03 (水) 17:00〜19:00
 
 みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}""",
                            f"""今週のオンライン開館日です！
 04/04 (木) 17:00〜19:00
 
 詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
 {SCHEDULE_LINK}""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
