@@ -10,6 +10,8 @@ import requests
 
 WEEKDAY_NAMES = ['月', '火', '水', '木', '金', '土', '日']
 
+SCHEDULE_LINK = 'https://camph.net/schedule/'
+
 
 class Event:
     start: datetime
@@ -49,10 +51,16 @@ class Event:
 
         if self.title.lower() == "open":
             return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-みなさんのお越しをお待ちしています!!"""
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
         elif self.title.lower() == "online open":
             return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-詳しくはCAMPHOR-のSlackをご覧ください!!"""
+詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
         elif self.title.strip() != "":
             message = f"""「{self.title}」を{start}〜{end}に開催します!
 みなさんのお越しをお待ちしています!!"""
@@ -105,6 +113,10 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     return messages
 
 
+def add_schedule_link(message: str) -> str:
+    return f"{message}\n{SCHEDULE_LINK}"
+
+
 def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
     if len(open_events) == 0:
         return ""
@@ -112,8 +124,8 @@ def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
     message = "今週の開館日です！\n"
     for open in open_events:
         message += open.get_day_and_time(tz)
-    message += "\nみなさんのお越しをお待ちしています!!"
-    return message
+    message += "\nみなさんのお越しをお待ちしています!!\n\nその他の開館日はこちら"
+    return add_schedule_link(message)
 
 
 def generate_online_open_event_message(
@@ -124,8 +136,8 @@ def generate_online_open_event_message(
     message = "今週のオンライン開館日です！\n"
     for online in online_open_events:
         message += online.get_day_and_time(tz)
-    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!"
-    return message
+    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n\nその他の開館日はこちら"
+    return add_schedule_link(message)
 
 
 def generate_other_event_message(other_events: List[Event], tz: tzinfo) -> str:

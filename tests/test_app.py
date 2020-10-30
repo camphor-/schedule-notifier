@@ -5,6 +5,8 @@ import pytz
 
 import app
 
+SCHEDULE_LINK = 'https://camph.net/schedule/'
+
 
 class TestEvent:
     def test_from_json(self):
@@ -59,8 +61,11 @@ class TestEvent:
             url=None,
             title="Open")
         message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
-        assert message == """本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
-みなさんのお越しをお待ちしています!!"""
+        assert message == f"""本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
 
         e = app.Event(
             start=datetime(2020, 4, 12, 15, tzinfo=tz),
@@ -68,8 +73,11 @@ class TestEvent:
             url=None,
             title="Online Open")
         message = e.generate_message(datetime(2020, 4, 12, 10, tzinfo=tz))
-        assert message == """本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
-詳しくはCAMPHOR-のSlackをご覧ください!!"""
+        assert message == f"""本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
+詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
 
         e = app.Event(
             start=datetime(2017, 3, 3, 17, tzinfo=tz),
@@ -113,11 +121,14 @@ https://example.com/"""
             url=None,
             title="Open")
         message = app.generate_week_message([e0, e1], tz)
-        assert message == ["""今週の開館日です！
+        assert message == [f"""今週の開館日です！
 04/01 (月) 17:00〜19:00
 04/03 (水) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!"""]
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""]
 
     def test_generate_week_message_with_online_open(self):
         tz = pytz.timezone("Asia/Tokyo")
@@ -132,11 +143,14 @@ https://example.com/"""
             url=None,
             title="Online Open")
         message = app.generate_week_message([e0, e1], tz)
-        assert message == ["""今週のオンライン開館日です！
+        assert message == [f"""今週のオンライン開館日です！
 04/01 (水) 17:00〜19:00
 04/03 (金) 17:00〜19:00
 
-詳しくはCAMPHOR-のSlackをご覧ください!!"""]
+詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""]
 
     def test_generate_week_message_with_event(self):
         tz = pytz.timezone("Asia/Tokyo")
@@ -176,11 +190,14 @@ Python Event 04/02 (火) 17:00〜19:00
             title="Open")
 
         message = app.generate_week_message([e0, e1, e2], tz)
-        assert message == ["""今週の開館日です！
+        assert message == [f"""今週の開館日です！
 04/01 (月) 17:00〜19:00
 04/03 (水) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!""",
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
 https://example.com/
@@ -212,15 +229,21 @@ https://example.com/
             title="Online Open")
 
         message = app.generate_week_message([e0, e1, e2, e3], tz)
-        assert message == ["""今週の開館日です！
+        assert message == [f"""今週の開館日です！
 04/01 (月) 17:00〜19:00
 04/03 (水) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!""",
-                           """今週のオンライン開館日です！
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}""",
+                           f"""今週のオンライン開館日です！
 04/04 (木) 17:00〜19:00
 
-詳しくはCAMPHOR-のSlackをご覧ください!!""",
+詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}""",
                            """今週のイベント情報です！
 Python Event 04/02 (火) 17:00〜19:00
 https://example.com/
