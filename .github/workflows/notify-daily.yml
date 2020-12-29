@@ -1,0 +1,28 @@
+name: CI
+
+# Controls when the action will run. 
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  push: # For debug
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify to Twitter (Daily)
+
+    steps:
+      - run: |
+          docker pull camphor/schedule-notifier
+          docker run --rm \
+            -e CSN_API_KEY=$TWITTER_API_KEY \
+            -e CSN_API_SECRET=$TWITTER_API_SECRET \
+            -e CSN_ACCESS_TOKEN=$TWITTER_ACCESS_TOKEN \
+            -e CSN_ACCESS_TOKEN_SECRET=$TWITTER_ACCESS_TOKEN_SECRET \
+            camphor/schedule-notifier \
+            schedule-notifier
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
