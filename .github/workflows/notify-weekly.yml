@@ -3,7 +3,6 @@ name: Notify to Twitter (Weekly)
 on:
   schedule:
     - cron: '0 1 * * 1' # At 10:00 am every Monday (JST)
-  push:
 
 jobs:
   notify:
@@ -19,7 +18,7 @@ jobs:
             -e CSN_ACCESS_TOKEN_SECRET=$TWITTER_ACCESS_TOKEN_SECRET \
             -e CSN_WEEK=1 \
             camphor/schedule-notifier \
-            schedule-notifier --now 2020-12-01
+            schedule-notifier
         env:
           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
           TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
