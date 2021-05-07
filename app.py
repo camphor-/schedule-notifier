@@ -49,18 +49,40 @@ class Event:
         start = self.start.astimezone(tz).time().strftime("%H:%M")
         end = self.end.astimezone(tz).time().strftime("%H:%M")
 
+        #openあり、makeなし
         if self.title.lower() == "open":
             return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-みなさんのお越しをお待ちしています!!
+            みなさんのお越しをお待ちしています!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
+        #openあり、makeあり、時間同じ
+        elif self.title.lower() == "make":
+            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+            Makeも利用できます。
+            詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
+        #openあり、makeあり、時間異なる
+        elif self.title.lower() == "make":
+            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+            Makeは{start}〜{end}に利用できます。
+            詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
+            
+        #openなし、makeあり
+        elif self.title.lower() == "make":
         elif self.title.lower() == "online open":
             return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+            Makeも利用できます。
 詳しくはCAMPHOR-のSlackをご覧ください!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
+        #openなし、makeなし
         elif self.title.strip() != "":
             message = f"""「{self.title}」を{start}〜{end}に開催します!
 みなさんのお越しをお待ちしています!!"""
@@ -164,7 +186,7 @@ def validate_datetime(ctx, param, value) -> Optional[datetime]:
 
 
 @click.command(help="CAMPHOR- Schedule Notifier")
-@click.option("--url", default="https://cal.camph.net/public/schedule.json",
+@click.option("--url", default="https://cal.camph.net/public/schedule-make.json",
               envvar="CSN_URL", help="URL of a schedule file.")
 @click.option("--api-key", type=click.STRING,
               envvar="CSN_API_KEY", help="Twitter API Key.")
