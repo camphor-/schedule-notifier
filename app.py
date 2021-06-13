@@ -52,15 +52,15 @@ class Event:
         #openあり、makeなし
         if self.title.lower() == "open":
             return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-            みなさんのお越しをお待ちしています!!
+みなさんのお越しをお待ちしています!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
         #openあり、makeあり、時間同じ
         elif self.title.lower() == "make":
             return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-            Makeも利用できます。
-            詳しくはCAMPHOR-のSlackをご覧ください!!
+Makeも利用できます。
+詳しくはCAMPHOR-のSlackをご覧ください!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
@@ -75,6 +75,12 @@ class Event:
             
         #openなし、makeあり
         elif self.title.lower() == "make":
+            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+Makeも利用できます。
+詳しくはCAMPHOR-のSlackをご覧ください!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
         elif self.title.lower() == "online open":
             return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
             Makeも利用できます。
@@ -109,6 +115,7 @@ def get_japanese_weekday(day: int) -> str:
 
 def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     open_events = list(filter(lambda e: e.title.lower() == "open", events))
+    make_events = list(filter(lambda e: e.title.lower() == "make", events))
     online_open_events = list(
         filter(
             lambda e: e.title.lower() == "online open",
@@ -122,6 +129,10 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     open_message = generate_open_event_message(open_events, tz)
     if open_message != "":
         messages.append(open_message)
+    
+    make_message = generate_make_event_message(make_events, tz)
+    if make_message != "":
+        messages.append(make_message)  
 
     online_open_message = generate_online_open_event_message(
         online_open_events, tz)
@@ -149,6 +160,16 @@ def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
     message += "\nみなさんのお越しをお待ちしています!!\n\nその他の開館日はこちら"
     return add_schedule_link(message)
 
+def generate_make_event_message(
+        make_open_events: List[Event], tz: tzinfo) -> str:
+    if len(make_open_events) == 0:
+        return ""
+
+    message = "今週のMakeが利用できる日です！\n"
+    for make in make_open_events:
+        message += make.get_day_and_time(tz)
+    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n\nその他の開館日はこちら"
+    return add_schedule_link(message)
 
 def generate_online_open_event_message(
         online_open_events: List[Event], tz: tzinfo) -> str:
@@ -262,11 +283,47 @@ def generate_messages(events: Iterable[Event], now: datetime,
     else:
         events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
                         events)
-        messages = [m for m in map(methodcaller("generate_message", now),
-                                   events)
-                    if m is not None]
+        # messages = [m for m in map(methodcaller("generate_message", now),
+        #                            events)
+        #             if m is not None]
+        messages = generate_day_message(list(events), tz)
 
     return messages
+
+# 1日分のTweetにまとめる
+def generate_day_message(events: List[Event], tz: tzinfo) -> List[str]:
+    open_events = list(filter(lambda e: e.title.lower() == "open", events))
+    make_events = list(filter(lambda e: e.title.lower() == "make", events))
+    online_open_events = list(
+        filter(
+            lambda e: e.title.lower() == "online open",
+            events))
+    other_events = list(
+        filter(lambda e: e.title.lower() != "open" and
+               e.title.lower() != "online open", events))
+
+    messages = []
+
+    open_message = generate_open_event_message(open_events, tz)
+    if open_message != "":
+        messages.append(open_message)
+
+    make_message = generate_make_event_message(make_events, tz)
+    if open_message != "":
+        messages.append(make_message)
+
+    online_open_message = generate_online_open_event_message(
+        online_open_events, tz)
+    if online_open_message != "":
+        messages.append(online_open_message)
+
+    other_message = generate_other_event_message(other_events, tz)
+    if other_message != "":
+        messages.append(other_message)
+
+    return messages
+
+
 
 
 if __name__ == "__main__":
