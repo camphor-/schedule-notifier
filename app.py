@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, tzinfo
-from operator import methodcaller
 from typing import Dict, Iterable, List, Optional
 
 import click
@@ -49,46 +48,41 @@ class Event:
         start = self.start.astimezone(tz).time().strftime("%H:%M")
         end = self.end.astimezone(tz).time().strftime("%H:%M")
 
-        #openあり、makeなし
+        # 開館 (Makeなし)
         if self.title.lower() == "open":
             return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
 みなさんのお越しをお待ちしています!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
-        #openあり、makeあり、時間同じ
+
+        # 開館 (Makeあり、時間同じ)
         elif self.title.lower() == "make":
-            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
 Makeも利用できます。
+みなさんのお越しをお待ちしています!!
+
+その他の開館日はこちら
+{SCHEDULE_LINK}"""
+
+        # 開館 (Makeあり、時間異なる)
+        elif self.title.lower() == "make":
+            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+Makeは{start}〜{end}に利用できます。
 詳しくはCAMPHOR-のSlackをご覧ください!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
-        #openあり、makeあり、時間異なる
-        elif self.title.lower() == "make":
-            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-            Makeは{start}〜{end}に利用できます。
-            詳しくはCAMPHOR-のSlackをご覧ください!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
-            
-        #openなし、makeあり
-        elif self.title.lower() == "make":
-            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-Makeも利用できます。
-詳しくはCAMPHOR-のSlackをご覧ください!!
-
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+        # オンライン開館
         elif self.title.lower() == "online open":
             return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-            Makeも利用できます。
 詳しくはCAMPHOR-のSlackをご覧ください!!
 
 その他の開館日はこちら
 {SCHEDULE_LINK}"""
-        #openなし、makeなし
+
+        # その他イベント
         elif self.title.strip() != "":
             message = f"""「{self.title}」を{start}〜{end}に開催します!
 みなさんのお越しをお待ちしています!!"""
@@ -129,10 +123,10 @@ def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
     open_message = generate_open_event_message(open_events, tz)
     if open_message != "":
         messages.append(open_message)
-    
+
     make_message = generate_make_event_message(make_events, tz)
     if make_message != "":
-        messages.append(make_message)  
+        messages.append(make_message)
 
     online_open_message = generate_online_open_event_message(
         online_open_events, tz)
@@ -160,6 +154,7 @@ def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
     message += "\nみなさんのお越しをお待ちしています!!\n\nその他の開館日はこちら"
     return add_schedule_link(message)
 
+
 def generate_make_event_message(
         make_open_events: List[Event], tz: tzinfo) -> str:
     if len(make_open_events) == 0:
@@ -170,6 +165,7 @@ def generate_make_event_message(
         message += make.get_day_and_time(tz)
     message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n\nその他の開館日はこちら"
     return add_schedule_link(message)
+
 
 def generate_online_open_event_message(
         online_open_events: List[Event], tz: tzinfo) -> str:
@@ -207,7 +203,7 @@ def validate_datetime(ctx, param, value) -> Optional[datetime]:
 
 
 @click.command(help="CAMPHOR- Schedule Notifier")
-@click.option("--url", default="https://cal.camph.net/public/schedule-make.json",
+@click.option("--url", default="https://cal.camph.net/public/schedule.json",
               envvar="CSN_URL", help="URL of a schedule file.")
 @click.option("--api-key", type=click.STRING,
               envvar="CSN_API_KEY", help="Twitter API Key.")
@@ -283,12 +279,10 @@ def generate_messages(events: Iterable[Event], now: datetime,
     else:
         events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
                         events)
-        # messages = [m for m in map(methodcaller("generate_message", now),
-        #                            events)
-        #             if m is not None]
         messages = generate_day_message(list(events), tz)
 
     return messages
+
 
 # 1日分のTweetにまとめる
 def generate_day_message(events: List[Event], tz: tzinfo) -> List[str]:
@@ -322,8 +316,6 @@ def generate_day_message(events: List[Event], tz: tzinfo) -> List[str]:
         messages.append(other_message)
 
     return messages
-
-
 
 
 if __name__ == "__main__":
