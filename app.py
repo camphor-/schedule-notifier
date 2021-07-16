@@ -6,6 +6,7 @@ import dateutil.parser
 from kawasemi import Kawasemi
 import pytz
 import requests
+import textwrap
 
 WEEKDAY_NAMES = ['月', '火', '水', '木', '金', '土', '日']
 
@@ -50,42 +51,47 @@ class Event:
 
         # 開館 (Makeなし)
         if self.title.lower() == "open":
-            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-みなさんのお越しをお待ちしています!!
+            return textwrap.dedent("""\
+                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+                みなさんのお越しをお待ちしています!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+                その他の開館日はこちら
+                {SCHEDULE_LINK}""")
 
         # 開館 (Makeあり、時間同じ)
         elif self.title.lower() == "make":
-            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-Makeも利用できます。
-みなさんのお越しをお待ちしています!!
+            return textwrap.dedent(f"""\
+                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+                Makeも利用できます。
+                みなさんのお越しをお待ちしています!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+                その他の開館日はこちら
+                {SCHEDULE_LINK}""")
 
         # 開館 (Makeあり、時間異なる)
         elif self.title.lower() == "make":
-            return f"""本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-Makeは{start}〜{end}に利用できます。
-詳しくはCAMPHOR-のSlackをご覧ください!!
+            return textwrap.dedent(f"""\
+                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
+                Makeは{start}〜{end}に利用できます。
+                詳しくはCAMPHOR-のSlackをご覧ください!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+                その他の開館日はこちら
+                {SCHEDULE_LINK}""")
 
         # オンライン開館
         elif self.title.lower() == "online open":
-            return f"""本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-詳しくはCAMPHOR-のSlackをご覧ください!!
+            return textwrap.dedent(f"""\
+                本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+                詳しくはCAMPHOR-のSlackをご覧ください!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+                その他の開館日はこちら
+                {SCHEDULE_LINK}""")
 
         # その他イベント
         elif self.title.strip() != "":
-            message = f"""「{self.title}」を{start}〜{end}に開催します!
-みなさんのお越しをお待ちしています!!"""
+            message = textwrap.dedent(f"""\
+                「{self.title}」を{start}〜{end}に開催します!
+                みなさんのお越しをお待ちしています!!""")
             if self.url is not None and self.url != "":
                 message += f"\n{self.url}"
             return message
