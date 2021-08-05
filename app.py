@@ -89,35 +89,21 @@ class MessageGenerator:
             messages = [message] if message is not None else []
         return messages
 
-    def add_schedule_link(self, message: str) -> str:
-        message += f"\nその他の開館日はこちら\n{SCHEDULE_LINK}"
-        return message
-
-    # 1日分
     def generate_day_message(self, events: List[Event]) -> Optional[str]:
-        open_events = list(filter(lambda e: e.title.lower() == "open", events))
-        make_events = list(filter(lambda e: e.title.lower() == "make", events))
-        online_open_events = list(
-            filter(
-                lambda e: e.title.lower() == "online open",
-                events))
-        other_events = list(filter(
-            lambda e: e.title.lower() != "open"
-            and e.title.lower() != "make"
-            and e.title.lower() != "online open"
-            and e.title.strip() != "", events))
-
+        events_by_title = divide_events_by_title(events)
         message = ""
 
         # 開館
-        if len(open_events) == 1:
-            open_start = open_events[0].get_start(self.tz)
-            open_end = open_events[0].get_end(self.tz)
+        if len(events_by_title["open"]) == 1:
+            open_event = events_by_title["open"][0]
+            open_start = open_event.get_start(self.tz)
+            open_end = open_event.get_end(self.tz)
             message += f"本日の CAMPHOR- HOUSE の開館時間は{open_start}〜{open_end}です。\n"
             # CAMPHOR- Make あり
-            if len(make_events) == 1:
-                make_start = make_events[0].get_start(self.tz)
-                make_end = make_events[0].get_end(self.tz)
+            if len(events_by_title["make"]) == 1:
+                make_event = events_by_title["make"][0]
+                make_start = make_event.get_start(self.tz)
+                make_end = make_event.get_end(self.tz)
                 # 時間同じ
                 if open_start == make_start and open_end == make_end:
                     message += "CAMPHOR- Make も利用できます。\n"
@@ -128,22 +114,23 @@ class MessageGenerator:
             message += "みなさんのお越しをお待ちしています!!\n"
 
         # オンライン開館
-        elif len(online_open_events) == 1:
-            start = online_open_events[0].get_start(self.tz)
-            end = online_open_events[0].get_end(self.tz)
+        elif len(events_by_title["online open"]) == 1:
+            online_open_event = events_by_title["online open"][0]
+            start = online_open_event.get_start(self.tz)
+            end = online_open_event.get_end(self.tz)
             message = textwrap.dedent(f"""\
                 本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
                 詳しくはCAMPHOR-のSlackをご覧ください!!
                 """)
 
         # その他のイベント
-        elif len(other_events) == 1:
-            title = other_events[0].title
-            start = other_events[0].get_start(self.tz)
-            end = other_events[0].get_end(self.tz)
-            url = other_events[0].url
+        elif len(events_by_title["other"]) == 1:
+            other_event = events_by_title["other"][0]
+            start = other_event.get_start(self.tz)
+            end = other_event.get_end(self.tz)
+            url = other_event.url
             message = textwrap.dedent(f"""\
-                「{title}」を{start}〜{end}に開催します!
+                「{other_event.title}」を{start}〜{end}に開催します!
                 みなさんのお越しをお待ちしています!!""")
             if url is not None and url != "":
                 message += f"\n{url}"
@@ -154,28 +141,26 @@ class MessageGenerator:
 
         return self.add_schedule_link(message)
 
-    # 1週間
     def generate_week_messages(self, events: List[Event]) -> List[str]:
+        events_by_title = divide_events_by_title(events)
         messages: List[str] = []
 
         # 開館日
-        open_events = list(filter(lambda e: e.title.lower() == "open", events))
-        make_events_date = [e.start.date()
-                            for e in events if e.title.lower() == "make"]
+        open_events = events_by_title["open"]
         if len(open_events) != 0:
             open_message = "今週の開館日です！\n"
             # CAMPHOR- Make が利用可能なとき、日時の後に`(Make)`を付ける
             for event in open_events:
                 open_message += event.get_day_and_time(self.tz)
-                if event.start.date() in make_events_date:
+                if event.start.date() in [e.start.date()
+                                          for e in events_by_title["make"]]:
                     open_message += " (Make)"
                 open_message += "\n"
             open_message += "\nみなさんのお越しをお待ちしています!!\n"
             messages.append(self.add_schedule_link(open_message))
 
         # オンライン開館日
-        online_open_events = list(filter(
-            lambda e: e.title.lower() == "online open", events))
+        online_open_events = events_by_title["online open"]
         if len(online_open_events) != 0:
             online_open_message = "今週のオンライン開館日です！\n"
             for event in online_open_events:
@@ -184,10 +169,7 @@ class MessageGenerator:
             messages.append(self.add_schedule_link(online_open_message))
 
         # その他のイベント日
-        other_events = list(filter(
-            lambda e: e.title.lower() != "open"
-            and e.title.lower() != "make"
-            and e.title.lower() != "online open", events))
+        other_events = events_by_title["other"]
         if len(other_events) != 0:
             other_message = "今週のイベント情報です！\n"
             for event in other_events:
@@ -200,9 +182,23 @@ class MessageGenerator:
 
         return messages
 
+    def add_schedule_link(self, message: str) -> str:
+        message += f"\nその他の開館日はこちら\n{SCHEDULE_LINK}"
+        return message
+
 
 def get_japanese_weekday(day: int) -> str:
     return WEEKDAY_NAMES[day]
+
+
+def divide_events_by_title(events: List[Event]) -> Dict[str, List[Event]]:
+    events_by_title: Dict[str, List[Event]] = {}
+    for title in ["open", "make", "online open"]:
+        events_by_title[title] = [
+            e for e in events if e.title.lower() == title]
+        events = [e for e in events if e.title.lower() != title]
+    events_by_title["other"] = [e for e in events if e.title.strip() != ""]
+    return events_by_title
 
 
 def validate_datetime(ctx, param, value) -> Optional[datetime]:
