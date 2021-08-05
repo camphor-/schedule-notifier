@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, tzinfo
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 
 import click
 import dateutil.parser
@@ -42,160 +42,167 @@ class Event:
             raise KeyError
         return cls(start=start, end=end, title=title, url=data["url"])
 
-    def generate_message(self, now: datetime) -> Optional[str]:
-        tz = now.tzinfo
-        if tz is None:
-            raise ValueError("'now' must be timezone aware datetime")
+    def get_start(self, tz: tzinfo) -> str:
         start = self.start.astimezone(tz).time().strftime("%H:%M")
+        return start
+
+    def get_end(self, tz: tzinfo) -> str:
         end = self.end.astimezone(tz).time().strftime("%H:%M")
-
-        # 開館 (Makeなし)
-        if self.title.lower() == "open":
-            return textwrap.dedent("""\
-                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-                みなさんのお越しをお待ちしています!!
-
-                その他の開館日はこちら
-                {SCHEDULE_LINK}""")
-
-        # 開館 (Makeあり、時間同じ)
-        elif self.title.lower() == "make":
-            return textwrap.dedent(f"""\
-                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-                Makeも利用できます。
-                みなさんのお越しをお待ちしています!!
-
-                その他の開館日はこちら
-                {SCHEDULE_LINK}""")
-
-        # 開館 (Makeあり、時間異なる)
-        elif self.title.lower() == "make":
-            return textwrap.dedent(f"""\
-                本日の CAMPHOR- HOUSE の開館時間は{start}〜{end}です。
-                Makeは{start}〜{end}に利用できます。
-                詳しくはCAMPHOR-のSlackをご覧ください!!
-
-                その他の開館日はこちら
-                {SCHEDULE_LINK}""")
-
-        # オンライン開館
-        elif self.title.lower() == "online open":
-            return textwrap.dedent(f"""\
-                本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
-                詳しくはCAMPHOR-のSlackをご覧ください!!
-
-                その他の開館日はこちら
-                {SCHEDULE_LINK}""")
-
-        # その他イベント
-        elif self.title.strip() != "":
-            message = textwrap.dedent(f"""\
-                「{self.title}」を{start}〜{end}に開催します!
-                みなさんのお越しをお待ちしています!!""")
-            if self.url is not None and self.url != "":
-                message += f"\n{self.url}"
-            return message
-        else:
-            return None
+        return end
 
     def get_day_and_time(self, tz: tzinfo) -> str:
         date = self.start.astimezone(tz).date().strftime("%m/%d")
         day = get_japanese_weekday(self.start.astimezone(tz).weekday())
-        start = self.start.astimezone(tz).time().strftime("%H:%M")
-        end = self.end.astimezone(tz).time().strftime("%H:%M")
-        return f"{date} ({day}) {start}〜{end}\n"
+        return f"{date} ({day}) {self.get_start(tz)}〜{self.get_end(tz)}"
 
     def get_day_and_time_with_title(self, tz: tzinfo) -> str:
         return f"{self.title} {self.get_day_and_time(tz)}"
 
 
+class MessageGenerator:
+    events: List[Event]
+    now: datetime
+    week: bool
+
+    def __init__(self, *, events: List[Event], now: datetime,
+                 week: bool) -> None:
+        self.events = events
+        if now.tzinfo is None:
+            raise ValueError("'now' must be timezone aware datetime")
+        self.tz = now.tzinfo
+        self.now = now.astimezone(self.tz)
+        self.week = week
+
+    def generate_messages(self) -> List[str]:
+        if self.week:
+            delta = timedelta(days=7)
+            events = list(filter(
+                lambda e: e.start.astimezone(self.tz).date() >= self.now.date()
+                and e.start.astimezone(self.tz).date() < self.now.date()
+                + delta, self.events))
+            messages = self.generate_week_messages(events)
+        else:
+            events = list(filter(
+                lambda e: e.start.astimezone(self.tz).date()
+                == self.now.date(), self.events))
+            message = self.generate_day_message(events)
+            messages = [message] if message is not None else []
+        return messages
+
+    def add_schedule_link(self, message: str) -> str:
+        message += f"\nその他の開館日はこちら\n{SCHEDULE_LINK}"
+        return message
+
+    # 1日分
+    def generate_day_message(self, events: List[Event]) -> Optional[str]:
+        open_events = list(filter(lambda e: e.title.lower() == "open", events))
+        make_events = list(filter(lambda e: e.title.lower() == "make", events))
+        online_open_events = list(
+            filter(
+                lambda e: e.title.lower() == "online open",
+                events))
+        other_events = list(filter(
+            lambda e: e.title.lower() != "open"
+            and e.title.lower() != "make"
+            and e.title.lower() != "online open"
+            and e.title.strip() != "", events))
+
+        message = ""
+
+        # 開館
+        if len(open_events) == 1:
+            open_start = open_events[0].get_start(self.tz)
+            open_end = open_events[0].get_end(self.tz)
+            message += f"本日の CAMPHOR- HOUSE の開館時間は{open_start}〜{open_end}です。\n"
+            # CAMPHOR- Make あり
+            if len(make_events) == 1:
+                make_start = make_events[0].get_start(self.tz)
+                make_end = make_events[0].get_end(self.tz)
+                # 時間同じ
+                if open_start == make_start and open_end == make_end:
+                    message += "CAMPHOR- Make も利用できます。\n"
+                # 時間異なる
+                else:
+                    message += "CAMPHOR- Make は"\
+                        f"{make_start}〜{make_end}に利用できます。\n"
+            message += "みなさんのお越しをお待ちしています!!\n"
+
+        # オンライン開館
+        elif len(online_open_events) == 1:
+            start = online_open_events[0].get_start(self.tz)
+            end = online_open_events[0].get_end(self.tz)
+            message = textwrap.dedent(f"""\
+                本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
+                詳しくはCAMPHOR-のSlackをご覧ください!!
+                """)
+
+        # その他のイベント
+        elif len(other_events) == 1:
+            title = other_events[0].title
+            start = other_events[0].get_start(self.tz)
+            end = other_events[0].get_end(self.tz)
+            url = other_events[0].url
+            message = textwrap.dedent(f"""\
+                「{title}」を{start}〜{end}に開催します!
+                みなさんのお越しをお待ちしています!!""")
+            if url is not None and url != "":
+                message += f"\n{url}"
+            return message
+
+        else:
+            return None
+
+        return self.add_schedule_link(message)
+
+    # 1週間
+    def generate_week_messages(self, events: List[Event]) -> List[str]:
+        messages: List[str] = []
+
+        # 開館日
+        open_events = list(filter(lambda e: e.title.lower() == "open", events))
+        make_events_date = [e.start.date()
+                            for e in events if e.title.lower() == "make"]
+        if len(open_events) != 0:
+            open_message = "今週の開館日です！\n"
+            # CAMPHOR- Make が利用可能なとき、日時の後に`(Make)`を付ける
+            for event in open_events:
+                open_message += event.get_day_and_time(self.tz)
+                if event.start.date() in make_events_date:
+                    open_message += " (Make)"
+                open_message += "\n"
+            open_message += "\nみなさんのお越しをお待ちしています!!\n"
+            messages.append(self.add_schedule_link(open_message))
+
+        # オンライン開館日
+        online_open_events = list(filter(
+            lambda e: e.title.lower() == "online open", events))
+        if len(online_open_events) != 0:
+            online_open_message = "今週のオンライン開館日です！\n"
+            for event in online_open_events:
+                online_open_message += event.get_day_and_time(self.tz) + "\n"
+            online_open_message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n"
+            messages.append(self.add_schedule_link(online_open_message))
+
+        # その他のイベント日
+        other_events = list(filter(
+            lambda e: e.title.lower() != "open"
+            and e.title.lower() != "make"
+            and e.title.lower() != "online open", events))
+        if len(other_events) != 0:
+            other_message = "今週のイベント情報です！\n"
+            for event in other_events:
+                other_message += event.get_day_and_time_with_title(
+                    self.tz) + "\n"
+                if event.url is not None:
+                    other_message += f"{event.url}\n"
+            other_message += "\nお申し込みの上ご参加ください。\nみなさんのお越しをお待ちしています!!"
+            messages.append(other_message)
+
+        return messages
+
+
 def get_japanese_weekday(day: int) -> str:
     return WEEKDAY_NAMES[day]
-
-
-def generate_week_message(events: List[Event], tz: tzinfo) -> List[str]:
-    open_events = list(filter(lambda e: e.title.lower() == "open", events))
-    make_events = list(filter(lambda e: e.title.lower() == "make", events))
-    online_open_events = list(
-        filter(
-            lambda e: e.title.lower() == "online open",
-            events))
-    other_events = list(
-        filter(lambda e: e.title.lower() != "open" and
-               e.title.lower() != "online open", events))
-
-    messages = []
-
-    open_message = generate_open_event_message(open_events, tz)
-    if open_message != "":
-        messages.append(open_message)
-
-    make_message = generate_make_event_message(make_events, tz)
-    if make_message != "":
-        messages.append(make_message)
-
-    online_open_message = generate_online_open_event_message(
-        online_open_events, tz)
-    if online_open_message != "":
-        messages.append(online_open_message)
-
-    other_message = generate_other_event_message(other_events, tz)
-    if other_message != "":
-        messages.append(other_message)
-
-    return messages
-
-
-def add_schedule_link(message: str) -> str:
-    return f"{message}\n{SCHEDULE_LINK}"
-
-
-def generate_open_event_message(open_events: List[Event], tz: tzinfo) -> str:
-    if len(open_events) == 0:
-        return ""
-
-    message = "今週の開館日です！\n"
-    for open in open_events:
-        message += open.get_day_and_time(tz)
-    message += "\nみなさんのお越しをお待ちしています!!\n\nその他の開館日はこちら"
-    return add_schedule_link(message)
-
-
-def generate_make_event_message(
-        make_open_events: List[Event], tz: tzinfo) -> str:
-    if len(make_open_events) == 0:
-        return ""
-
-    message = "今週のMakeが利用できる日です！\n"
-    for make in make_open_events:
-        message += make.get_day_and_time(tz)
-    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n\nその他の開館日はこちら"
-    return add_schedule_link(message)
-
-
-def generate_online_open_event_message(
-        online_open_events: List[Event], tz: tzinfo) -> str:
-    if len(online_open_events) == 0:
-        return ""
-
-    message = "今週のオンライン開館日です！\n"
-    for online in online_open_events:
-        message += online.get_day_and_time(tz)
-    message += "\n詳しくはCAMPHOR-のSlackをご覧ください!!\n\nその他の開館日はこちら"
-    return add_schedule_link(message)
-
-
-def generate_other_event_message(other_events: List[Event], tz: tzinfo) -> str:
-    if len(other_events) == 0:
-        return ""
-    message = "今週のイベント情報です！\n"
-    for event in other_events:
-        message += event.get_day_and_time_with_title(tz)
-        if event.url is not None:
-            message += f"{event.url}\n"
-    message += "\nお申し込みの上ご参加ください。"
-    message += "\nみなさんのお越しをお待ちしています!!"
-    return message
 
 
 def validate_datetime(ctx, param, value) -> Optional[datetime]:
@@ -240,7 +247,8 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
     events = download_events(url)
     if events is None:
         return
-    messages = generate_messages(events, now, week)
+    mg = MessageGenerator(events=events, now=now, week=week)
+    messages = mg.generate_messages()
     if dry_run:
         for i, message in enumerate(messages):
             print(f"#{i + 1}\n{message}")
@@ -267,61 +275,6 @@ def download_events(url: str) -> Optional[List[Event]]:
     if response.status_code != requests.codes.ok:
         return None
     return [Event.from_json(e) for e in response.json()]
-
-
-def generate_messages(events: Iterable[Event], now: datetime,
-                      week: bool) -> List[str]:
-    tz = now.tzinfo
-    if tz is None:
-        raise ValueError("'now' must be timezone aware datetime")
-    now = now.astimezone(tz)
-
-    if week:
-        delta = timedelta(days=7)
-        events = filter(lambda e: e.start.astimezone(tz).date() >= now.date()
-                        and e.start.astimezone(tz).date() < now.date() + delta,
-                        events)
-        messages = generate_week_message(list(events), tz)
-    else:
-        events = filter(lambda e: e.start.astimezone(tz).date() == now.date(),
-                        events)
-        messages = generate_day_message(list(events), tz)
-
-    return messages
-
-
-# 1日分のTweetにまとめる
-def generate_day_message(events: List[Event], tz: tzinfo) -> List[str]:
-    open_events = list(filter(lambda e: e.title.lower() == "open", events))
-    make_events = list(filter(lambda e: e.title.lower() == "make", events))
-    online_open_events = list(
-        filter(
-            lambda e: e.title.lower() == "online open",
-            events))
-    other_events = list(
-        filter(lambda e: e.title.lower() != "open" and
-               e.title.lower() != "online open", events))
-
-    messages = []
-
-    open_message = generate_open_event_message(open_events, tz)
-    if open_message != "":
-        messages.append(open_message)
-
-    make_message = generate_make_event_message(make_events, tz)
-    if open_message != "":
-        messages.append(make_message)
-
-    online_open_message = generate_online_open_event_message(
-        online_open_events, tz)
-    if online_open_message != "":
-        messages.append(online_open_message)
-
-    other_message = generate_other_event_message(other_events, tz)
-    if other_message != "":
-        messages.append(other_message)
-
-    return messages
 
 
 if __name__ == "__main__":
