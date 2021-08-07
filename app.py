@@ -85,61 +85,76 @@ class MessageGenerator:
             events = list(filter(
                 lambda e: e.start.astimezone(self.tz).date()
                 == self.now.date(), self.events))
-            message = self.generate_day_message(events)
-            messages = [message] if message is not None else []
+            messages = self.generate_day_messages(events)
         return messages
 
-    def generate_day_message(self, events: List[Event]) -> Optional[str]:
+    def generate_day_messages(self, events: List[Event]) -> List[str]:
         events_by_title = divide_events_by_title(events)
-        message = ""
+        messages: List[str] = []
 
         # 開館
-        if len(events_by_title["open"]) == 1:
-            open_event = events_by_title["open"][0]
+        open_events = events_by_title["open"]
+        if len(open_events) == 1:
+            open_event = open_events[0]
             open_start = open_event.get_start(self.tz)
             open_end = open_event.get_end(self.tz)
-            message += f"本日の CAMPHOR- HOUSE の開館時間は{open_start}〜{open_end}です。\n"
+            open_message = "本日の CAMPHOR- HOUSE の開館時間は"\
+                f"{open_start}〜{open_end}です。\n"
             # CAMPHOR- Make あり
-            if len(events_by_title["make"]) == 1:
-                make_event = events_by_title["make"][0]
+            make_events = events_by_title["make"]
+            if len(make_events) == 1:
+                make_event = make_events[0]
                 make_start = make_event.get_start(self.tz)
                 make_end = make_event.get_end(self.tz)
                 # 時間同じ
                 if open_start == make_start and open_end == make_end:
-                    message += "CAMPHOR- Make も利用できます。\n"
+                    open_message += "CAMPHOR- Make も利用できます。\n"
                 # 時間異なる
                 else:
-                    message += "CAMPHOR- Make は"\
+                    open_message += "CAMPHOR- Make は"\
                         f"{make_start}〜{make_end}に利用できます。\n"
-            message += "みなさんのお越しをお待ちしています!!\n"
+            elif len(make_events) > 1:
+                raise ValueError("The maximum number of Make events per day"
+                                 " is one, but found several.")
+            open_message += "みなさんのお越しをお待ちしています!!\n"
+            messages.append(self.add_schedule_link(open_message))
+        elif len(open_events) > 1:
+            raise ValueError("The maximum number of Open events per day is"
+                             " one, but found several.")
 
         # オンライン開館
-        elif len(events_by_title["online open"]) == 1:
-            online_open_event = events_by_title["online open"][0]
+        online_open_events = events_by_title["online open"]
+        if len(online_open_events) == 1:
+            online_open_event = online_open_events[0]
             start = online_open_event.get_start(self.tz)
             end = online_open_event.get_end(self.tz)
-            message = textwrap.dedent(f"""\
+            online_open_message = textwrap.dedent(f"""\
                 本日の CAMPHOR- HOUSE のオンライン開館時間は{start}〜{end}です。
                 詳しくはCAMPHOR-のSlackをご覧ください!!
                 """)
+            messages.append(self.add_schedule_link(online_open_message))
+        elif len(online_open_events) > 1:
+            raise ValueError("The maximum number of Online Open events per"
+                             " day is one, but found several.")
 
         # その他のイベント
-        elif len(events_by_title["other"]) == 1:
-            other_event = events_by_title["other"][0]
+        other_events = events_by_title["other"]
+        if len(other_events) == 1:
+            other_event = other_events[0]
             start = other_event.get_start(self.tz)
             end = other_event.get_end(self.tz)
             url = other_event.url
-            message = textwrap.dedent(f"""\
+            other_message = textwrap.dedent(f"""\
                 「{other_event.title}」を{start}〜{end}に開催します!
                 みなさんのお越しをお待ちしています!!""")
             if url is not None and url != "":
-                message += f"\n{url}"
-            return message
+                other_message += f"\n{url}"
+            messages.append(other_message)
+        elif len(other_events) > 1:
+            raise ValueError("The maximum number of Other events per day"
+                             " is one, but found several.")
 
-        else:
-            return None
-
-        return self.add_schedule_link(message)
+        return messages
 
     def generate_week_messages(self, events: List[Event]) -> List[str]:
         events_by_title = divide_events_by_title(events)
