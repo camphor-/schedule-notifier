@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 import pytz
+import textwrap
 
 import app
 
@@ -53,60 +54,191 @@ class TestEvent:
         with pytest.raises(KeyError):
             app.Event.from_json(d)
 
-    def test_generate_message(self):
+    def test_generate_day_messages_with_open(self):
         tz = pytz.timezone("Asia/Tokyo")
         e = app.Event(
             start=datetime(2017, 3, 3, 15, tzinfo=tz),
             end=datetime(2017, 3, 3, 19, tzinfo=tz),
             url=None,
             title="Open")
-        message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
-        assert message == f"""本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
-みなさんのお越しをお待ちしています!!
+        mg = app.MessageGenerator(
+            events=[e],
+            now=datetime(2017, 3, 3, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
+            みなさんのお越しをお待ちしています!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
 
+    def test_generate_day_messages_with_open_and_make(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2021, 8, 2, 15, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2021, 8, 2, 15, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        mg = app.MessageGenerator(
+            events=[e0, e1],
+            now=datetime(2021, 8, 2, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
+            CAMPHOR- Make も利用できます。
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
+
+        e0 = app.Event(
+            start=datetime(2021, 8, 2, 15, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2021, 8, 2, 16, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        mg = app.MessageGenerator(
+            events=[e0, e1],
+            now=datetime(2021, 8, 2, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
+            CAMPHOR- Make は16:00〜19:00に利用できます。
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
+
+    def test_generate_day_messages_with_online_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
         e = app.Event(
             start=datetime(2020, 4, 12, 15, tzinfo=tz),
             end=datetime(2020, 4, 12, 19, tzinfo=tz),
             url=None,
             title="Online Open")
-        message = e.generate_message(datetime(2020, 4, 12, 10, tzinfo=tz))
-        assert message == f"""本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
-詳しくはCAMPHOR-のSlackをご覧ください!!
+        mg = app.MessageGenerator(
+            events=[e],
+            now=datetime(2020, 4, 12, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE のオンライン開館時間は15:00〜19:00です。
+            詳しくはCAMPHOR-のSlackをご覧ください!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
 
+    def test_generate_day_messages_with_event(self):
+        tz = pytz.timezone("Asia/Tokyo")
         e = app.Event(
             start=datetime(2017, 3, 3, 17, tzinfo=tz),
             end=datetime(2017, 3, 3, 19, tzinfo=tz),
             url="https://example.com/",
             title="Python Event")
-        message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
-        assert message == """「Python Event」を17:00〜19:00に開催します!
-みなさんのお越しをお待ちしています!!
-https://example.com/"""
+        mg = app.MessageGenerator(
+            events=[e],
+            now=datetime(2017, 3, 3, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent("""\
+            「Python Event」を17:00〜19:00に開催します!
+            みなさんのお越しをお待ちしています!!
+            https://example.com/""")]
 
         e = app.Event(
             start=datetime(2017, 3, 3, 17, tzinfo=tz),
             end=datetime(2017, 3, 3, 19, tzinfo=tz),
             url=None,
             title="Python Event")
-        message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
-        assert message == """「Python Event」を17:00〜19:00に開催します!
-みなさんのお越しをお待ちしています!!"""
+        mg = app.MessageGenerator(
+            events=[e],
+            now=datetime(2017, 3, 3, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent("""\
+            「Python Event」を17:00〜19:00に開催します!
+            みなさんのお越しをお待ちしています!!""")]
 
-    def test_generate_message_where_title_is_missing(self):
+    def test_generate_day_messages_with_open_make_and_online_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2021, 8, 7, 17, tzinfo=tz),
+            end=datetime(2021, 8, 7, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2021, 8, 7, 18, tzinfo=tz),
+            end=datetime(2021, 8, 7, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        e2 = app.Event(
+            start=datetime(2021, 8, 7, 21, tzinfo=tz),
+            end=datetime(2021, 8, 7, 23, tzinfo=tz),
+            url=None,
+            title="Online Open")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2],
+            now=datetime(2021, 8, 7, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE の開館時間は17:00〜19:00です。
+            CAMPHOR- Make は18:00〜19:00に利用できます。
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}"""),
+                           textwrap.dedent(f"""\
+            本日の CAMPHOR- HOUSE のオンライン開館時間は21:00〜23:00です。
+            詳しくはCAMPHOR-のSlackをご覧ください!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
+
+    def test_generate_day_message_where_title_is_missing(self):
         tz = pytz.timezone("Asia/Tokyo")
         e = app.Event(
             start=datetime(2017, 3, 3, 17, tzinfo=tz),
             end=datetime(2017, 3, 3, 19, tzinfo=tz),
             url=None,
             title="")
-        message = e.generate_message(datetime(2017, 3, 3, 10, tzinfo=tz))
-        assert message is None
+        mg = app.MessageGenerator(
+            events=[e],
+            now=datetime(2017, 3, 3, 10, tzinfo=tz),
+            week=False)
+        message = mg.generate_messages()
+        assert message == []
+
+    def test_generate_day_message_where_duplicate_events(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2021, 8, 7, 17, tzinfo=tz),
+            end=datetime(2021, 8, 7, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2021, 8, 7, 18, tzinfo=tz),
+            end=datetime(2021, 8, 7, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        mg = app.MessageGenerator(
+            events=[e0, e1],
+            now=datetime(2021, 8, 7, 10, tzinfo=tz),
+            week=False)
+        with pytest.raises(ValueError):
+            mg.generate_messages()
 
     def test_generate_week_message_with_open(self):
         tz = pytz.timezone("Asia/Tokyo")
@@ -120,21 +252,88 @@ https://example.com/"""
             end=datetime(2019, 4, 3, 19, tzinfo=tz),
             url=None,
             title="Open")
-        message = app.generate_week_message([e0, e1], tz)
-        assert message == [f"""今週の開館日です！
-04/01 (月) 17:00〜19:00
-04/03 (水) 17:00〜19:00
+        mg = app.MessageGenerator(
+            events=[e0, e1],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            04/01 (月) 17:00〜19:00
+            04/03 (水) 17:00〜19:00
 
-みなさんのお越しをお待ちしています!!
+            みなさんのお越しをお待ちしています!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""]
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
+
+    def test_generate_week_message_with_open_and_make(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e2 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            04/01 (月) 17:00〜19:00
+            04/03 (水) 17:00〜19:00 (Make)
+
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
+
+        e0 = app.Event(
+            start=datetime(2021, 8, 2, 17, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e1 = app.Event(
+            start=datetime(2021, 8, 2, 18, tzinfo=tz),
+            end=datetime(2021, 8, 2, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        e2 = app.Event(
+            start=datetime(2021, 8, 5, 17, tzinfo=tz),
+            end=datetime(2021, 8, 5, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2],
+            now=datetime(2021, 8, 2, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            08/02 (月) 17:00〜19:00 (Make)
+            08/05 (木) 17:00〜19:00
+
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
 
     def test_generate_week_message_with_online_open(self):
         tz = pytz.timezone("Asia/Tokyo")
         e0 = app.Event(
             start=datetime(2020, 4, 1, 17, tzinfo=tz),
-            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            end=datetime(2020, 4, 1, 19, tzinfo=tz),
             url=None,
             title="Online Open")
         e1 = app.Event(
@@ -142,15 +341,20 @@ https://example.com/"""
             end=datetime(2020, 4, 3, 19, tzinfo=tz),
             url=None,
             title="Online Open")
-        message = app.generate_week_message([e0, e1], tz)
-        assert message == [f"""今週のオンライン開館日です！
-04/01 (水) 17:00〜19:00
-04/03 (金) 17:00〜19:00
+        mg = app.MessageGenerator(
+            events=[e0, e1],
+            now=datetime(2020, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週のオンライン開館日です！
+            04/01 (水) 17:00〜19:00
+            04/03 (金) 17:00〜19:00
 
-詳しくはCAMPHOR-のSlackをご覧ください!!
+            詳しくはCAMPHOR-のSlackをご覧ください!!
 
-その他の開館日はこちら
-{SCHEDULE_LINK}"""]
+            その他の開館日はこちら
+            {SCHEDULE_LINK}""")]
 
     def test_generate_week_message_with_event(self):
         tz = pytz.timezone("Asia/Tokyo")
@@ -159,16 +363,25 @@ https://example.com/"""
             end=datetime(2019, 4, 2, 19, tzinfo=tz),
             url=None,
             title="Python Event")
-        message = app.generate_week_message([e0], tz)
-        assert message == ["""今週のイベント情報です！
-Python Event 04/02 (火) 17:00〜19:00
+        mg = app.MessageGenerator(
+            events=[e0],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent("""\
+            今週のイベント情報です！
+            Python Event 04/02 (火) 17:00〜19:00
 
-お申し込みの上ご参加ください。
-みなさんのお越しをお待ちしています!!"""]
+            お申し込みの上ご参加ください。
+            みなさんのお越しをお待ちしています!!""")]
 
     def test_generate_week_message_with_nothing(self):
         tz = pytz.timezone("Asia/Tokyo")
-        message = app.generate_week_message([], tz)
+        mg = app.MessageGenerator(
+            events=[],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
         assert message == []
 
     def test_generate_week_message_with_event_and_open(self):
@@ -188,24 +401,29 @@ Python Event 04/02 (火) 17:00〜19:00
             end=datetime(2019, 4, 3, 19, tzinfo=tz),
             url=None,
             title="Open")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            04/01 (月) 17:00〜19:00
+            04/03 (水) 17:00〜19:00
 
-        message = app.generate_week_message([e0, e1, e2], tz)
-        assert message == [f"""今週の開館日です！
-04/01 (月) 17:00〜19:00
-04/03 (水) 17:00〜19:00
+            みなさんのお越しをお待ちしています!!
 
-みなさんのお越しをお待ちしています!!
+            その他の開館日はこちら
+            {SCHEDULE_LINK}"""),
+                           textwrap.dedent("""\
+            今週のイベント情報です！
+            Python Event 04/02 (火) 17:00〜19:00
+            https://example.com/
 
-その他の開館日はこちら
-{SCHEDULE_LINK}""",
-                           """今週のイベント情報です！
-Python Event 04/02 (火) 17:00〜19:00
-https://example.com/
+            お申し込みの上ご参加ください。
+            みなさんのお越しをお待ちしています!!""")]
 
-お申し込みの上ご参加ください。
-みなさんのお越しをお待ちしています!!"""]
-
-    def test_generate_week_message_with_event_open_and_online_open(self):
+    def test_generate_week_message_with_event_open_and_make(self):
         tz = pytz.timezone("Asia/Tokyo")
         e0 = app.Event(
             start=datetime(2019, 4, 2, 17, tzinfo=tz),
@@ -223,30 +441,85 @@ https://example.com/
             url=None,
             title="Open")
         e3 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2, e3],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            04/01 (月) 17:00〜19:00
+            04/03 (水) 17:00〜19:00 (Make)
+
+            みなさんのお越しをお待ちしています!!
+
+            その他の開館日はこちら
+            {SCHEDULE_LINK}"""),
+                           textwrap.dedent("""\
+            今週のイベント情報です！
+            Python Event 04/02 (火) 17:00〜19:00
+            https://example.com/
+
+            お申し込みの上ご参加ください。
+            みなさんのお越しをお待ちしています!!""")]
+
+    def test_generate_week_message_with_event_open_make_and_online_open(self):
+        tz = pytz.timezone("Asia/Tokyo")
+        e0 = app.Event(
+            start=datetime(2019, 4, 2, 17, tzinfo=tz),
+            end=datetime(2019, 4, 2, 19, tzinfo=tz),
+            url='https://example.com/',
+            title="Python Event")
+        e1 = app.Event(
+            start=datetime(2019, 4, 1, 17, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e2 = app.Event(
+            start=datetime(2019, 4, 1, 18, tzinfo=tz),
+            end=datetime(2019, 4, 1, 19, tzinfo=tz),
+            url=None,
+            title="Make")
+        e3 = app.Event(
+            start=datetime(2019, 4, 3, 17, tzinfo=tz),
+            end=datetime(2019, 4, 3, 19, tzinfo=tz),
+            url=None,
+            title="Open")
+        e4 = app.Event(
             start=datetime(2019, 4, 4, 17, tzinfo=tz),
             end=datetime(2019, 4, 4, 19, tzinfo=tz),
             url=None,
             title="Online Open")
+        mg = app.MessageGenerator(
+            events=[e0, e1, e2, e3, e4],
+            now=datetime(2019, 4, 1, 10, tzinfo=tz),
+            week=True)
+        message = mg.generate_messages()
+        assert message == [textwrap.dedent(f"""\
+            今週の開館日です！
+            04/01 (月) 17:00〜19:00 (Make)
+            04/03 (水) 17:00〜19:00
 
-        message = app.generate_week_message([e0, e1, e2, e3], tz)
-        assert message == [f"""今週の開館日です！
-04/01 (月) 17:00〜19:00
-04/03 (水) 17:00〜19:00
+            みなさんのお越しをお待ちしています!!
 
-みなさんのお越しをお待ちしています!!
+            その他の開館日はこちら
+            {SCHEDULE_LINK}"""),
+                           textwrap.dedent(f"""\
+            今週のオンライン開館日です！
+            04/04 (木) 17:00〜19:00
 
-その他の開館日はこちら
-{SCHEDULE_LINK}""",
-                           f"""今週のオンライン開館日です！
-04/04 (木) 17:00〜19:00
+            詳しくはCAMPHOR-のSlackをご覧ください!!
 
-詳しくはCAMPHOR-のSlackをご覧ください!!
+            その他の開館日はこちら
+            {SCHEDULE_LINK}"""),
+                           textwrap.dedent("""\
+            今週のイベント情報です！
+            Python Event 04/02 (火) 17:00〜19:00
+            https://example.com/
 
-その他の開館日はこちら
-{SCHEDULE_LINK}""",
-                           """今週のイベント情報です！
-Python Event 04/02 (火) 17:00〜19:00
-https://example.com/
-
-お申し込みの上ご参加ください。
-みなさんのお越しをお待ちしています!!"""]
+            お申し込みの上ご参加ください。
+            みなさんのお越しをお待ちしています!!""")]
