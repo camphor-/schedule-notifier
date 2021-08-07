@@ -25,10 +25,5 @@ For more information, run `schedule-notifier --help`
 * Install: `pip install -U -e '.[test]'`
 * Run tests: `tox`
 
-## Publish image to docker hub
-
-DockerHub automatically builds a new image from source code in this repositry when new commits are pushed to `master` branch.
-See https://docs.docker.com/docker-hub/builds/ for more information.
-
 ## License
 MIT License. See [LICENSE](LICENSE).
