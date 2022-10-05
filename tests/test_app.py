@@ -71,7 +71,6 @@ class TestEvent:
             みなさんのお越しをお待ちしています!!
             HOUSEの場所はこちら
             https://goo.gl/maps/qasTRtgjnoP2
-            
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
 
@@ -98,7 +97,6 @@ class TestEvent:
             みなさんのお越しをお待ちしています!!
             HOUSEの場所はこちら
             https://goo.gl/maps/qasTRtgjnoP2
-
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
 
@@ -123,7 +121,6 @@ class TestEvent:
             みなさんのお越しをお待ちしています!!
             HOUSEの場所はこちら
             https://goo.gl/maps/qasTRtgjnoP2
-
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
 
