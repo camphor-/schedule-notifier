@@ -117,6 +117,7 @@ class MessageGenerator:
                 raise ValueError("The maximum number of Make events per day"
                                  " is one, but found several.")
             open_message += "みなさんのお越しをお待ちしています!!\n"
+            open_message += "HOUSEの場所はこちら\nhttps://goo.gl/maps/qasTRtgjnoP2"
             messages.append(self.add_schedule_link(open_message))
         elif len(open_events) > 1:
             raise ValueError("The maximum number of Open events per day is"
