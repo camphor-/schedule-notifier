@@ -69,7 +69,9 @@ class TestEvent:
         assert message == [textwrap.dedent(f"""\
             本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
             みなさんのお越しをお待ちしています!!
-
+            HOUSEの場所はこちら
+            https://goo.gl/maps/qasTRtgjnoP2
+            
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
 
@@ -94,6 +96,8 @@ class TestEvent:
             本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
             CAMPHOR- Make も利用できます。
             みなさんのお越しをお待ちしています!!
+            HOUSEの場所はこちら
+            https://goo.gl/maps/qasTRtgjnoP2
 
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
@@ -117,6 +121,8 @@ class TestEvent:
             本日の CAMPHOR- HOUSE の開館時間は15:00〜19:00です。
             CAMPHOR- Make は16:00〜19:00に利用できます。
             みなさんのお越しをお待ちしています!!
+            HOUSEの場所はこちら
+            https://goo.gl/maps/qasTRtgjnoP2
 
             その他の開館日はこちら
             {SCHEDULE_LINK}""")]
