@@ -2,7 +2,7 @@ name: Notify to Twitter (Daily)
 
 on:
   schedule:
-    - cron: '0 23 * * *' # At 10:00 am everyday (JST)
+    - cron: '0 23 * * *' # At 8:00 am everyday (JST)
 
 jobs:
   notify:
