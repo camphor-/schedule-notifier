@@ -17,7 +17,7 @@ setup(
     py_modules=['app'],
     install_requires=[
         'click>=6.0,<7.0',
-        'kawasemi>=1.0.0,<2.0.0',
+        'kawasemi>=1.0.0,<4.0.0',
         'python-dateutil>=2.6.0,<3.0',
         'pytz>=2016.10',
     ],
