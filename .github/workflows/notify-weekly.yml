@@ -10,7 +10,7 @@ jobs:
     name: Notify to Twitter (Weekly)
     steps:
       - name: Login to Docker Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: registry.camph.net
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
