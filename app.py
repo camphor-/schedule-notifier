@@ -266,12 +266,14 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
             print(f"#{i + 1}\n{message}")
         return
     if len(messages) > 0:
-        twitter_client = OAuth1Session(api_key, api_secret, access_token, access_token_secret)
+        twitter_client = OAuth1Session(api_key,
+                                       api_secret,
+                                       access_token,
+                                       access_token_secret)
         endpoint = "https://api.twitter.com/2/tweets"
-        
+
         for message in messages:
             twitter_client.post(endpoint, json={"text": message})
-
 
 
 def download_events(url: str) -> Optional[List[Event]]:
