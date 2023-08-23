@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, tzinfo
 from typing import Dict, List, Optional
+from requests_oauthlib import OAuth1Session
 
 import click
 import dateutil.parser
-from kawasemi import Kawasemi
 import pytz
 import requests
 import textwrap
@@ -266,20 +266,12 @@ def main(url: str, api_key: str, api_secret: str, access_token: str,
             print(f"#{i + 1}\n{message}")
         return
     if len(messages) > 0:
-        kawasemi = Kawasemi({
-            "CHANNELS": {
-                "twitter": {
-                    "_backend": "kawasemi.backends.twitter.TwitterChannel",
-                    "api_key": api_key,
-                    "api_secret": api_secret,
-                    "access_token": access_token,
-                    "access_token_secret": access_token_secret,
-                }
-            }
-        })
-
+        twitter_client = OAuth1Session(api_key, api_secret, access_token, access_token_secret)
+        endpoint = "https://api.twitter.com/2/tweets"
+        
         for message in messages:
-            kawasemi.send(message)
+            twitter_client.post(endpoint, json={"text": message})
+
 
 
 def download_events(url: str) -> Optional[List[Event]]:
